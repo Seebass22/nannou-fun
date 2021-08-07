@@ -32,22 +32,16 @@ fn model(app: &App) -> Model {
 fn update(app: &App, model: &mut Model, _update: Update) {
     let time = app.elapsed_frames() as f32;
 
-    // if ! model.points.is_empty() {
-    //     model.points.remove(0);
-    // }
     let sn = 0.01;
 
     for point in model.points.iter_mut() {
         point.x += point.x * 0.0005 * (point.y * 0.3 * time.sin() + 1.0)
             * model.noise.get([sn*point.x as f64, sn*point.y as f64]) as f32;
-            // * random::<f32>();
         point.y += point.y * 0.0005 * (point.x * 0.3 * time.sin() + 1.0)
             * model.noise.get([sn*point.x as f64, sn*point.y as f64]) as f32;
 
         point.x += 0.2 * point.y.sin();
 
-        // point.x += point.x * 0.00003 * time;
-        // point.y += point.y * 0.00003 * time;
         if time < 300.0 {
             point.x += point.x * 0.002;
             point.y += point.y * 0.002;
@@ -61,20 +55,22 @@ fn update(app: &App, model: &mut Model, _update: Update) {
             point.x += point.x * 0.0005;
             point.y += point.y * 0.0005;
         } else if time < 1500.0 {
-            point.x -= point.x * 0.01;
-            point.y -= point.y * 0.01;
+            point.x -= point.x * 0.002;
+            point.y -= point.y * 0.002;
         } else if time < 1800.0 {
             point.x += point.x * point.x.sin() * 0.01;
             point.y += point.y * point.y.cos() * 0.01;
         } else if time < 2100.0 {
-            point.x += point.x * 0.005;
-            point.y += point.y * 0.005;
+            point.x += point.x * 0.0005;
+            point.y += point.y * 0.0005;
 
             point.x += point.y * 0.0005;
             point.y += point.x * 0.0005;
         } else {
             point.x += 0.5 * point.y.sin();
         }
+        point.x = point.x.clamp(-5000.0, 5000.0);
+        point.y = point.y.clamp(-5000.0, 5000.0);
     }
 }
 
@@ -87,12 +83,11 @@ fn view(app: &App, model: &Model, frame: Frame) {
     let time = (app.elapsed_frames() / 50) as f32;
     let timeval = (time.sin() + 1.0) / 2.0;
 
-    draw.rect().w_h(2000.0, 2000.0).color(srgba(0.0, 0.0, 0.0, 0.02));
+    draw.rect().w_h(2000.0, 2000.0).color(srgba(0.0, 0.0, 0.0, 0.12));
 
-    for point in model.points.iter() {
-        draw.ellipse().x_y(point.x, point.y).w_h(2.0, 2.0)
-            // .color(srgb(timeval, timeval, 0.0));
-            .color(WHITE);
+    for i in 0..100 {
+        let newpoints = &model.points[i*100..(i*100+100)];
+        draw.polyline().points(newpoints.iter().cloned()).color(WHITE);
     }
 
     draw.to_frame(app, &frame).unwrap();
