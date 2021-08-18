@@ -7,6 +7,7 @@ struct Model {
     noise: Perlin,
     radius: f32,
     scale: f64,
+    angle: f32,
 }
 
 fn main() {
@@ -30,6 +31,7 @@ fn model(app: &App) -> Model {
         noise,
         radius,
         scale: 0.01,
+        angle: 0.005,
     }
 }
 
@@ -38,6 +40,7 @@ fn update(app: &App, model: &mut Model, _update: Update) {
     let speed = 0.08;
 
     for point in model.points.iter_mut() {
+        rotate_point(point, model.angle);
         point.x += point.x * 0.015
             * model.noise.get([sn*point.x as f64, sn*point.y as f64]) as f32;
         point.y += point.y * 0.015
@@ -58,7 +61,15 @@ fn update(app: &App, model: &mut Model, _update: Update) {
             set_point(-max, val, i+300, model);
         }
         model.scale = random_range(0.0001, 0.01);
+        model.angle = random_range(0.005, 0.15);
     }
+}
+
+fn rotate_point(point: &mut Vec2, angle: f32) {
+    let s = angle.sin();
+    let c = angle.cos();
+    point.x = point.x * c - point.y * s;
+    point.y = point.x * s + point.y * c;
 }
 
 fn set_point(x: f32, y: f32, i: usize, model: &mut Model) {
