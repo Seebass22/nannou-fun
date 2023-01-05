@@ -1,13 +1,8 @@
 use nannou::prelude::*;
-use nannou::noise::*;
 use nannou::rand::random_range;
 
 struct Model {
-    points: Vec<Vec2>,
-    noise: Perlin,
-    radius: f32,
-    scale: f64,
-    angle: f32,
+    points: Vec<Vec3>,
 }
 
 fn main() {
@@ -15,67 +10,50 @@ fn main() {
 }
 
 fn model(app: &App) -> Model {
-    let _window = app.new_window().view(view).size(1920, 1080).build().unwrap();
+    let _window = app.new_window().view(view).size(640, 480).build().unwrap();
     let mut points = Vec::new();
 
-    let radius = 20.0;
-    let noise = Perlin::new();
-    for _i in 0..400 {
-        let x = 0.0;
-        let y = 0.0;
-        points.push(vec2(x, y));
+    for x in (-24..24).step_by(6) {
+        for y in (-24..24).step_by(6) {
+            for z in (-24..24).step_by(6) {
+                let x = x as f32;
+                let y = y as f32;
+                let z = z as f32;
+                points.push(vec3(x, y, z));
+            }
+        }
     }
 
-    Model {
-        points,
-        noise,
-        radius,
-        scale: 0.01,
-        angle: 0.005,
-    }
+    Model { points }
 }
 
 fn update(app: &App, model: &mut Model, _update: Update) {
-    let sn = model.scale;
-    let speed = 0.08;
-
     for point in model.points.iter_mut() {
-        rotate_point(point, model.angle);
-        point.x += point.x * 0.015
-            * model.noise.get([sn*point.x as f64, sn*point.y as f64]) as f32;
-        point.y += point.y * 0.015
-            * model.noise.get([sn*point.x as f64, sn*point.y as f64]) as f32;
-
-        point.x += point.x * speed;
-        point.y += point.y * speed;
-    }
-
-    if app.elapsed_frames() % 200 == 0 {
-        for i in 0..100 {
-            let val = (-model.radius / 2.0) + (i as f32 * model.radius / 100.0);
-            let max = model.radius / 2.0;
-
-            set_point(val, max, i, model);
-            set_point(max, -val, i+100, model);
-            set_point(-val, -max, i+200, model);
-            set_point(-max, val, i+300, model);
-        }
-        model.scale = random_range(0.0001, 0.01);
-        model.angle = random_range(0.005, 0.15);
+        rotate_x(point, 0.001);
+        rotate_y(point, 0.002);
+        rotate_z(point, 0.003);
     }
 }
 
-fn rotate_point(point: &mut Vec2, angle: f32) {
+fn rotate_z(point: &mut Vec3, angle: f32) {
     let s = angle.sin();
     let c = angle.cos();
     point.x = point.x * c - point.y * s;
     point.y = point.x * s + point.y * c;
 }
 
-fn set_point(x: f32, y: f32, i: usize, model: &mut Model) {
-    let point = model.points.get_mut(i).unwrap();
-    point.x = x;
-    point.y = y;
+fn rotate_x(point: &mut Vec3, angle: f32) {
+    let s = angle.sin();
+    let c = angle.cos();
+    point.y = point.y * c - point.z * s;
+    point.z = point.y * s + point.z * c;
+}
+
+fn rotate_y(point: &mut Vec3, angle: f32) {
+    let s = angle.sin();
+    let c = angle.cos();
+    point.x = point.x * c - point.z * s;
+    point.z = point.x * s + point.z * c;
 }
 
 fn view(app: &App, model: &Model, frame: Frame) {
@@ -84,12 +62,27 @@ fn view(app: &App, model: &Model, frame: Frame) {
         draw.background().color(BLACK);
     }
 
-    let mut points = model.points.clone();
-    points.push(*points.get(0).unwrap());
-    draw.polyline().points(points).color(WHITE);
+    let size = map_range((app.time).sin(), -1.0, 1.0, 5.0, 50.0);
 
-    draw.rect().w_h(2000.0, 2000.0).color(srgba(0.0, 0.0, 0.0, 0.1));
+    for point in model.points.iter() {
+        // let x = point.x / (point.z);
+        // let y = point.y / (point.z);
+        let x = point.x + 0.5 * point.z;
+        let y = point.y + 0.5 * point.z;
+
+        let z_c = (26.0 + point.z) / 52.0;
+        let x_c = (26.0 + point.x) / 52.0;
+        let y_c = (26.0 + point.y) / 52.0;
+        draw.rect()
+            .x(5.0 * x)
+            .y(5.0 * y)
+            .w_h(size, size)
+            .color(srgba(x_c, y_c, z_c, 1.0));
+    }
+
+    draw.rect()
+        .w_h(2000.0, 2000.0)
+        .color(srgba(0.0, 0.0, 0.0, 0.3));
 
     draw.to_frame(app, &frame).unwrap();
 }
-
