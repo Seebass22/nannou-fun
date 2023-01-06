@@ -1,5 +1,4 @@
 use nannou::prelude::*;
-use nannou::rand::random_range;
 
 struct Model {
     points: Vec<Vec3>,
@@ -28,10 +27,12 @@ fn model(app: &App) -> Model {
 }
 
 fn update(app: &App, model: &mut Model, _update: Update) {
+    let m_x = app.mouse.x;
+    let m_y = app.mouse.y;
     for point in model.points.iter_mut() {
-        rotate_x(point, 0.001);
-        rotate_y(point, 0.002);
-        rotate_z(point, 0.003);
+        rotate_x(point, 0.00001 * m_y);
+        rotate_y(point, 0.00001 * m_x);
+        // rotate_z(point, 0.003);
     }
 }
 
@@ -62,11 +63,11 @@ fn view(app: &App, model: &Model, frame: Frame) {
         draw.background().color(BLACK);
     }
 
-    let size = map_range((app.time).sin(), -1.0, 1.0, 5.0, 50.0);
+    let size = 10.0;
 
     for point in model.points.iter() {
-        // let x = point.x / (point.z);
-        // let y = point.y / (point.z);
+        // let x = point.x / (0.1 * point.z);
+        // let y = point.y / (0.1 * point.z);
         let x = point.x + 0.5 * point.z;
         let y = point.y + 0.5 * point.z;
 
