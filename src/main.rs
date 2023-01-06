@@ -34,6 +34,7 @@ fn update(app: &App, model: &mut Model, _update: Update) {
         rotate_y(point, 0.00001 * m_x);
         // rotate_z(point, 0.003);
     }
+    model.points.sort_by(|a,b| b.z.partial_cmp(&a.z).unwrap());
 }
 
 fn rotate_z(point: &mut Vec3, angle: f32) {
@@ -63,13 +64,14 @@ fn view(app: &App, model: &Model, frame: Frame) {
         draw.background().color(BLACK);
     }
 
-    let size = 10.0;
+    let size = 40.0;
 
     for point in model.points.iter() {
-        // let x = point.x / (0.1 * point.z);
-        // let y = point.y / (0.1 * point.z);
-        let x = point.x + 0.5 * point.z;
-        let y = point.y + 0.5 * point.z;
+        let z = 100.0 + point.z;
+        let x = point.x / (0.01 * z);
+        let y = point.y / (0.01 * z);
+        // let x = point.x + 0.5 * point.z;
+        // let y = point.y + 0.5 * point.z;
 
         let z_c = (26.0 + point.z) / 52.0;
         let x_c = (26.0 + point.x) / 52.0;
