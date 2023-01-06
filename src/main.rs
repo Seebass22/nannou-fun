@@ -1,4 +1,5 @@
 use nannou::prelude::*;
+use rand::prelude::*;
 
 struct Model {
     points: Vec<Vec3>,
@@ -23,6 +24,8 @@ fn model(app: &App) -> Model {
         }
     }
 
+    let mut rng = rand::thread_rng();
+    points.shuffle(&mut rng);
     Model { points }
 }
 
@@ -34,7 +37,6 @@ fn update(app: &App, model: &mut Model, _update: Update) {
         rotate_y(point, 0.00001 * m_x);
         // _rotate_z(point, 0.003);
     }
-    // model.points.sort_by(|a,b| b.z.partial_cmp(&a.z).unwrap());
 }
 
 fn _rotate_z(point: &mut Vec3, angle: f32) {
@@ -64,6 +66,7 @@ fn view(app: &App, model: &Model, frame: Frame) {
         draw.background().color(BLACK);
     }
 
+    let size = 5.0;
     let mut points: Vec<Vec2> = Vec::new();
     for point in model.points.iter() {
         let z = 100.0 + point.z;
@@ -72,10 +75,12 @@ fn view(app: &App, model: &Model, frame: Frame) {
         // let x = point.x + 0.5 * point.z;
         // let y = point.y + 0.5 * point.z;
 
-        points.push(Vec2::new(5.0 * x, 5.0 * y));
+        points.push(Vec2::new(size * x, size * y));
     }
 
-    draw.polyline().points(points).color(WHITE);
+    let mut rng = rand::thread_rng();
+    points.shuffle(&mut rng);
+    draw.polyline().weight(0.2).points(points).color(WHITE);
 
     draw.rect()
         .w_h(2000.0, 2000.0)
