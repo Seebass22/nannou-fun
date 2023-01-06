@@ -1,5 +1,4 @@
 use nannou::prelude::*;
-use rand::prelude::*;
 
 struct Model {
     points: Vec<Vec3>,
@@ -24,22 +23,18 @@ fn model(app: &App) -> Model {
         }
     }
 
-    let mut rng = rand::thread_rng();
-    points.shuffle(&mut rng);
     Model { points }
 }
 
-fn update(app: &App, model: &mut Model, _update: Update) {
-    let m_x = app.mouse.x;
-    let m_y = app.mouse.y;
+fn update(_app: &App, model: &mut Model, _update: Update) {
     for point in model.points.iter_mut() {
-        rotate_x(point, 0.00001 * m_y);
-        rotate_y(point, 0.00001 * m_x);
-        // _rotate_z(point, 0.003);
+        rotate_x(point, 0.001);
+        rotate_y(point, 0.002);
+        rotate_z(point, 0.003);
     }
 }
 
-fn _rotate_z(point: &mut Vec3, angle: f32) {
+fn rotate_z(point: &mut Vec3, angle: f32) {
     let s = angle.sin();
     let c = angle.cos();
     point.x = point.x * c - point.y * s;
@@ -66,7 +61,7 @@ fn view(app: &App, model: &Model, frame: Frame) {
         draw.background().color(BLACK);
     }
 
-    let size = 5.0;
+    let size = (1.03+(app.time).sin()) * 5.0;
     let mut points: Vec<Vec2> = Vec::new();
     for point in model.points.iter() {
         let z = 100.0 + point.z;
@@ -78,9 +73,7 @@ fn view(app: &App, model: &Model, frame: Frame) {
         points.push(Vec2::new(size * x, size * y));
     }
 
-    let mut rng = rand::thread_rng();
-    points.shuffle(&mut rng);
-    draw.polyline().weight(0.2).points(points).color(WHITE);
+    draw.polyline().weight(0.3).points(points).color(WHITE);
 
     draw.rect()
         .w_h(2000.0, 2000.0)
