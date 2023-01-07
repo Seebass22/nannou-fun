@@ -9,7 +9,7 @@ fn main() {
 }
 
 fn model(app: &App) -> Model {
-    let _window = app.new_window().view(view).size(640, 480).build().unwrap();
+    let _window = app.new_window().view(view).size(1920, 1080).build().unwrap();
     let mut points = Vec::new();
 
     for x in (-24..24).step_by(6) {
@@ -32,7 +32,7 @@ fn update(_app: &App, model: &mut Model, _update: Update) {
         rotate_y(point, 0.002);
         rotate_z(point, 0.003);
     }
-    model.points.sort_by(|a,b| b.z.partial_cmp(&a.z).unwrap());
+    // model.points.sort_by(|a,b| b.z.partial_cmp(&a.z).unwrap());
 }
 
 fn rotate_z(point: &mut Vec3, angle: f32) {
@@ -61,21 +61,24 @@ fn view(app: &App, model: &Model, frame: Frame) {
     if app.elapsed_frames() == 1 {
         draw.background().color(BLACK);
     }
+    draw.background().color(BLACK);
 
-    let size = 30.0;
+    let mut points: Vec<Vec<Vec2>> = Vec::new();
+    let mut points_vec: Vec<Vec2> = Vec::new();
     for point in model.points.iter() {
         let z = 100.0 + point.z;
         let x = point.x / (0.01 * z);
         let y = 15.0 * (2.0 * app.time + 0.1 * x).sin() * 0.3 + point.y / (0.01 * z);
 
-        let z_c = (26.0 + point.z) / 52.0;
-        let x_c = (26.0 + point.x) / 52.0;
-        let y_c = (26.0 + point.y) / 52.0;
-        draw.rect()
-            .x(5.0 * x)
-            .y(5.0 * y)
-            .w_h(size, size)
-            .color(srgba(x_c, y_c, z_c, 1.0));
+        points_vec.push(Vec2::new(15.0 * x, 15.0 * y));
+        if points_vec.len() == 8 {
+            points.push(points_vec.clone());
+            points_vec.clear();
+        }
+    }
+    for points_vec in points.into_iter() {
+        draw.polyline().weight(2.0).points(points_vec)
+            .color(WHITE);
     }
 
     draw.rect()
