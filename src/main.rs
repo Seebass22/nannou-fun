@@ -32,7 +32,6 @@ fn update(_app: &App, model: &mut Model, _update: Update) {
         rotate_y(point, 0.002);
         rotate_z(point, 0.003);
     }
-    // model.points.sort_by(|a,b| b.z.partial_cmp(&a.z).unwrap());
 }
 
 fn rotate_z(point: &mut Vec3, angle: f32) {
@@ -58,9 +57,6 @@ fn rotate_y(point: &mut Vec3, angle: f32) {
 
 fn view(app: &App, model: &Model, frame: Frame) {
     let draw = app.draw();
-    if app.elapsed_frames() == 1 {
-        draw.background().color(BLACK);
-    }
     draw.background().color(BLACK);
 
     let mut points: Vec<Vec<Vec2>> = Vec::new();
@@ -76,14 +72,13 @@ fn view(app: &App, model: &Model, frame: Frame) {
             points_vec.clear();
         }
     }
-    for points_vec in points.into_iter() {
-        draw.polyline().weight(2.0).points(points_vec)
-            .color(WHITE);
-    }
 
-    draw.rect()
-        .w_h(2000.0, 2000.0)
-        .color(srgba(0.0, 0.0, 0.0, 0.3));
+    for points_vec in points.into_iter() {
+        let x = points_vec.get(0).unwrap().x;
+        let r = (app.time + 0.005 * x).sin();
+        draw.polyline().weight(2.0).points(points_vec)
+            .color(srgb(r, 0.0, 0.0));
+    }
 
     draw.to_frame(app, &frame).unwrap();
 }
