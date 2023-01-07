@@ -62,10 +62,11 @@ fn view(app: &App, model: &Model, frame: Frame) {
         draw.background().color(BLACK);
     }
 
-    let size = 20.0;
+    let size = 30.0;
     for point in model.points.iter() {
-        let x = point.x + 0.5 * point.z;
-        let y = point.y + 0.5 * point.z;
+        let z = 100.0 + point.z;
+        let x = point.x / (0.01 * z);
+        let y = 15.0 * (2.0 * app.time + 0.1 * x).sin() * 0.3 + point.y / (0.01 * z);
 
         let z_c = (26.0 + point.z) / 52.0;
         let x_c = (26.0 + point.x) / 52.0;
