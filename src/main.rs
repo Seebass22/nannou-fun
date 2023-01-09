@@ -78,8 +78,14 @@ fn view(app: &App, model: &Model, frame: Frame) {
     }
 
     for points_vec in points.into_iter() {
+        let x = points_vec.get(0).unwrap().x;
+        let y = points_vec.get(0).unwrap().y;
+
+        let r = (app.time + 0.005 * x).sin();
+        let g = map_range(x, -1000.0, 1000.0, 0.0, 1.0);
+        let b = map_range(y, -1000.0, 1000.0, 0.0, 1.0);
         draw.polyline().weight(2.0).points(points_vec)
-            .color(srgb(1.0, 0.0, 0.0));
+            .color(srgb(r, g, b));
     }
 
     draw.to_frame(app, &frame).unwrap();
