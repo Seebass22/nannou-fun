@@ -12,9 +12,9 @@ fn model(app: &App) -> Model {
     let _window = app.new_window().view(view).size(1920, 1080).build().unwrap();
     let mut points = Vec::new();
 
-    for x in (-24..24).step_by(6) {
-        for y in (-24..24).step_by(6) {
-            for z in (-24..24).step_by(6) {
+    for x in (-24..=24).step_by(3) {
+        for y in (-24..=24).step_by(3) {
+            for z in (-24..=24).step_by(3) {
                 let x = x as f32;
                 let y = y as f32;
                 let z = z as f32;
@@ -63,11 +63,12 @@ fn view(app: &App, model: &Model, frame: Frame) {
     let mut points_vec: Vec<Vec2> = Vec::new();
     for point in model.points.iter() {
         let z = 100.0 + point.z;
-        let x = point.x / (0.01 * z);
+        let _x = point.x / (0.01 * z);
+        let x = 15.0 * (3.0 * app.time + 0.2 * _x).sin() * 0.3 + point.x / (0.01 * z);
         let y = 15.0 * (2.0 * app.time + 0.1 * x).sin() * 0.3 + point.y / (0.01 * z);
 
-        points_vec.push(Vec2::new(15.0 * x, 15.0 * y));
-        if points_vec.len() == 8 {
+        points_vec.push(Vec2::new(10.0 * x, 10.0 * y));
+        if points_vec.len() == 17 {
             points.push(points_vec.clone());
             points_vec.clear();
         }
