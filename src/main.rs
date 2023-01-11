@@ -65,7 +65,7 @@ fn view(app: &App, model: &Model, frame: Frame) {
     let mut points: Vec<Vec<Vec2>> = Vec::new();
     let mut points_vec: Vec<Vec2> = Vec::new();
     for point in model.points.iter() {
-        let z = 100.0 + point.z;
+        let z = map_range(app.time.sin(), -1.0, 1.0, 0.4, 1.5) * 100.0 + point.z;
         let _x = point.x / (0.01 * z);
         let x = 15.0 * (3.0 * app.time + 0.2 * _x).sin() * x_scale + point.x / (0.01 * z);
         let y = 15.0 * (3.0 * app.time + 0.2 * x).sin() * y_scale + point.y / (0.01 * z);
