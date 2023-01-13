@@ -65,11 +65,12 @@ fn view(app: &App, model: &Model, frame: Frame) {
     let mut points: Vec<(Vec<Vec2>, Vec<Vec3>)> = Vec::new();
     let mut points_vec: Vec<Vec2> = Vec::new();
     let mut colors_vec: Vec<Vec3> = Vec::new();
+
     for point in model.points.clone().iter() {
         let z = map_range(app.time.sin(), -1.0, 1.0, 0.4, 1.5) * 100.0 + point.z;
         let _x = point.x / (0.01 * z);
-        let x = 15.0 * (3.0 * app.time + (app.time * 0.3).sin() * 1.5 * _x).sin() * x_scale + point.x / (0.01 * z);
-        let y = 15.0 * (3.0 * app.time + 1.8 * x).sin() * y_scale + point.y / (0.01 * z);
+        let x = 15.0 * (3.0 * app.time + (app.time * 0.1).sin() * 0.5 * _x).sin() * x_scale + point.x / (0.01 * z);
+        let y = 15.0 * (3.0 * app.time + 0.2 * x).sin() * y_scale + point.y / (0.01 * z);
 
         points_vec.push(Vec2::new(10.0 * x, 10.0 * y));
         colors_vec.push(*point);
