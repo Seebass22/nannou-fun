@@ -12,13 +12,13 @@ fn model(app: &App) -> Model {
     let _window = app.new_window().view(view).size(1920, 1080).build().unwrap();
     let mut points = Vec::new();
 
-    for x in (-24..=24).step_by(2) {
-        for y in (-24..=24).step_by(2) {
-            for z in (-24..=24).step_by(2) {
+    for x in (-24..=24).step_by(6) {
+        for y in (-24..=24).step_by(6) {
+            for z in (-240..=240).step_by(1) {
                 let x = x as f32;
                 let y = y as f32;
                 let z = z as f32;
-                points.push(vec3(x, y, z));
+                points.push(vec3(x, y, 0.1 * z));
             }
         }
     }
@@ -68,12 +68,12 @@ fn view(app: &App, model: &Model, frame: Frame) {
     for point in model.points.clone().iter() {
         let z = map_range(app.time.sin(), -1.0, 1.0, 0.4, 1.5) * 100.0 + point.z;
         let _x = point.x / (0.01 * z);
-        let x = 15.0 * (3.0 * app.time + 0.2 * _x).sin() * x_scale + point.x / (0.01 * z);
-        let y = 15.0 * (3.0 * app.time + 0.2 * x).sin() * y_scale + point.y / (0.01 * z);
+        let x = 15.0 * (3.0 * app.time + (app.time * 0.3).sin() * 1.5 * _x).sin() * x_scale + point.x / (0.01 * z);
+        let y = 15.0 * (3.0 * app.time + 1.8 * x).sin() * y_scale + point.y / (0.01 * z);
 
         points_vec.push(Vec2::new(10.0 * x, 10.0 * y));
         colors_vec.push(*point);
-        if points_vec.len() == 25 {
+        if points_vec.len() == 481 {
             points.push((points_vec.clone(), colors_vec.clone()));
             points_vec.clear();
             colors_vec.clear();
