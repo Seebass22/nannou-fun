@@ -12,9 +12,9 @@ fn model(app: &App) -> Model {
     let _window = app.new_window().view(view).size(1920, 1080).build().unwrap();
     let mut points = Vec::new();
 
-    for x in (-24..=24).step_by(3) {
-        for y in (-24..=24).step_by(3) {
-            for z in (-24..=24).step_by(3) {
+    for x in (-24..=24).step_by(2) {
+        for y in (-24..=24).step_by(2) {
+            for z in (-24..=24).step_by(2) {
                 let x = x as f32;
                 let y = y as f32;
                 let z = z as f32;
@@ -62,28 +62,32 @@ fn view(app: &App, model: &Model, frame: Frame) {
     let x_scale = map_range(app.mouse.x, 0.0, 2000.0, 0.0, 1.0);
     let y_scale = map_range(app.mouse.y, 0.0, 2000.0, 0.0, 1.0);
 
-    let mut points: Vec<Vec<Vec2>> = Vec::new();
+    let mut points: Vec<(Vec<Vec2>, Vec<Vec3>)> = Vec::new();
     let mut points_vec: Vec<Vec2> = Vec::new();
-    for point in model.points.iter() {
+    let mut colors_vec: Vec<Vec3> = Vec::new();
+    for point in model.points.clone().iter() {
         let z = map_range(app.time.sin(), -1.0, 1.0, 0.4, 1.5) * 100.0 + point.z;
         let _x = point.x / (0.01 * z);
         let x = 15.0 * (3.0 * app.time + 0.2 * _x).sin() * x_scale + point.x / (0.01 * z);
         let y = 15.0 * (3.0 * app.time + 0.2 * x).sin() * y_scale + point.y / (0.01 * z);
 
         points_vec.push(Vec2::new(10.0 * x, 10.0 * y));
-        if points_vec.len() == 17 {
-            points.push(points_vec.clone());
+        colors_vec.push(*point);
+        if points_vec.len() == 25 {
+            points.push((points_vec.clone(), colors_vec.clone()));
             points_vec.clear();
+            colors_vec.clear();
         }
     }
 
-    for points_vec in points.into_iter() {
-        let x = points_vec.get(0).unwrap().x;
-        let y = points_vec.get(0).unwrap().y;
+    for (points_vec, colors_vec) in points.into_iter() {
+        let x = colors_vec[0].x;
+        let y = colors_vec[0].y;
+        let z = colors_vec[0].z;
 
-        let r = (app.time + 0.005 * x).sin();
-        let g = map_range(x, -1000.0, 1000.0, 0.0, 1.0);
-        let b = map_range(y, -1000.0, 1000.0, 0.0, 1.0);
+        let r = map_range((2.0 * app.time + 0.005 * x).sin() * z, -30.0, 30.0, 0.0, 1.0);
+        let g = map_range(x, -30.0, 30.0, 0.0, 1.0);
+        let b = map_range(y, -30.0, 30.0, 0.0, 1.0);
         draw.polyline().weight(2.0).points(points_vec)
             .color(srgb(r, g, b));
     }
