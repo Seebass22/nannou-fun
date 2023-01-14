@@ -1,4 +1,4 @@
-use nannou::prelude::*;
+use nannou::{prelude::*, math::ConvertAngle};
 
 struct Model {
     points: Vec<Vec3>,
@@ -12,14 +12,15 @@ fn model(app: &App) -> Model {
     let _window = app.new_window().view(view).size(1920, 1080).build().unwrap();
     let mut points = Vec::new();
 
-    for x in (-24..=24).step_by(6) {
-        for y in (-24..=24).step_by(6) {
-            for z in (-240..=240).step_by(1) {
-                let x = x as f32;
-                let y = y as f32;
-                let z = z as f32;
-                points.push(vec3(x, y, 0.1 * z));
-            }
+    let radius = 1.0;
+    for theta in (0..=180).step_by(10) {
+        for phi in (0..=360).step_by(1) {
+            let theta = (theta as f32).deg_to_rad();
+            let phi = (phi as f32).deg_to_rad();
+            let x = radius * theta.sin() * phi.cos();
+            let y = radius * theta.sin() * phi.sin();
+            let z = radius * theta.cos();
+            points.push(vec3(x, y, z));
         }
     }
 
@@ -59,22 +60,20 @@ fn view(app: &App, model: &Model, frame: Frame) {
     let draw = app.draw();
     draw.background().color(BLACK);
 
-    let x_scale = map_range(app.mouse.x, 0.0, 2000.0, 0.0, 1.0);
-    let y_scale = map_range(app.mouse.y, 0.0, 2000.0, 0.0, 1.0);
-
     let mut points: Vec<(Vec<Vec2>, Vec<Vec3>)> = Vec::new();
-    let mut points_vec: Vec<Vec2> = Vec::new();
-    let mut colors_vec: Vec<Vec3> = Vec::new();
+    let mut points_vec = Vec::new();
+    let mut colors_vec = Vec::new();
 
-    for point in model.points.clone().iter() {
-        let z = map_range(app.time.sin(), -1.0, 1.0, 0.4, 1.5) * 100.0 + point.z;
-        let _x = point.x / (0.01 * z);
-        let x = 15.0 * (3.0 * app.time + (app.time * 0.1).sin() * 0.5 * _x).sin() * x_scale + point.x / (0.01 * z);
-        let y = 15.0 * (3.0 * app.time + 0.2 * x).sin() * y_scale + point.y / (0.01 * z);
+    for point in model.points.clone().iter_mut() {
+        *point *= map_range((305.5 * app.time).sin(), -1.0, 1.0, 1.0, 5.0);
+
+        let z = point.z - 10.0;
+        let x = point.x / (0.01 * z);
+        let y = point.y / (0.01 * z);
 
         points_vec.push(Vec2::new(10.0 * x, 10.0 * y));
         colors_vec.push(*point);
-        if points_vec.len() == 481 {
+        if points_vec.len() == 361 {
             points.push((points_vec.clone(), colors_vec.clone()));
             points_vec.clear();
             colors_vec.clear();
@@ -86,10 +85,10 @@ fn view(app: &App, model: &Model, frame: Frame) {
         let y = colors_vec[0].y;
         let z = colors_vec[0].z;
 
-        let r = map_range((2.0 * app.time + 0.005 * x).sin() * z, -30.0, 30.0, 0.0, 1.0);
-        let g = map_range(x, -30.0, 30.0, 0.0, 1.0);
-        let b = map_range(y, -30.0, 30.0, 0.0, 1.0);
-        draw.polyline().weight(2.0).points(points_vec)
+        let r = map_range((2.0 * app.time + 0.005 * x).sin() * z, -1.0, 1.0, 0.0, 1.0);
+        let g = map_range(x, -1.0, 1.0, 0.0, 1.0);
+        let b = map_range(y, -1.0, 1.0, 0.0, 1.0);
+        draw.polyline().weight(1.0).points(points_vec)
             .color(srgb(r, g, b));
     }
 
