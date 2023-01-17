@@ -68,7 +68,7 @@ fn view(app: &App, model: &Model, frame: Frame) {
 
     for point in model.points.clone().iter_mut() {
         rotate_x(point, app.time.sin());
-        *point *= map_range((5.5 * app.time).sin(), -1.0, 1.0, 1.0, 5.0);
+        *point *= map_range((525.5 * app.time).sin(), -1.0, 1.0, 1.0, 5.0);
 
         let z = point.z - 10.0;
         let x = point.x / (0.01 * z);
@@ -85,13 +85,13 @@ fn view(app: &App, model: &Model, frame: Frame) {
 
     for (points_vec, colors_vec) in points.into_iter() {
         let x = colors_vec[0].x;
-        let y = colors_vec[0].y;
         let z = colors_vec[0].z;
 
-        let r = map_range((2.0 * app.time + 0.005 * x).sin() * z, -1.0, 1.0, 0.0, 1.0);
-        let g = map_range(x, -1.0, 1.0, 0.0, 1.0);
-        let b = map_range(y, -1.0, 1.0, 0.0, 1.0);
-        draw.polyline().weight(1.0).points(points_vec)
+        let r = map_range((108.0 * app.time + 0.005 * x).sin() * z, -1.0, 1.0, 0.0, 1.0);
+        let g = 0.0;
+        let b = 0.0;
+
+        draw.polyline().weight(2.0).points(points_vec)
             .color(srgb(r, g, b));
     }
 
