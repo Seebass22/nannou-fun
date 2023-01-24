@@ -76,7 +76,7 @@ fn view(app: &App, model: &Model, frame: Frame) {
         let rand_mult: f32 = rng.gen();
         let wave_value = 2.0 * rand_mult * (i.deg_to_rad() * periods).sin();
         rotate_x(point, app.time.sin());
-        *point *= 4.0 * map_range(y_scale * wave_value, -1.0, 1.0, 1.0, 1.2);
+        *point *= 4.0 * map_range(y_scale * wave_value, -1.0, 1.0, 1.0, 1.2) * (300.0 * app.time).sin();
 
         let z = point.z - 10.0;
         let x = point.x / (0.01 * z);
