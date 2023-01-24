@@ -13,7 +13,7 @@ fn model(app: &App) -> Model {
     let mut points = Vec::new();
 
     let radius = 1.0;
-    for theta in (0..=180).step_by(10) {
+    for theta in (0..=180).step_by(5) {
         for phi in (0..=360).step_by(1) {
             let theta = (theta as f32).deg_to_rad();
             let phi = (phi as f32).deg_to_rad();
@@ -65,7 +65,7 @@ fn view(app: &App, model: &Model, frame: Frame) {
     let mut colors_vec = Vec::new();
 
     for point in model.points.clone().iter_mut() {
-        rotate_x(point, app.time.sin());
+        rotate_x(point, 0.7 * app.time.sin());
         *point *= 4.0;
 
         let z = point.z - 10.0;
@@ -82,10 +82,11 @@ fn view(app: &App, model: &Model, frame: Frame) {
     }
 
     for (i, (points_vec, _colors_vec)) in points.into_iter().enumerate() {
-        let t = (i as f32 + 15.0 * app.time).sin();
-
-        draw.polyline().weight(15.0).points(points_vec)
-            .color(srgb(t, t, t));
+        let t = (i as f32 * 0.08 + 2.0 * app.time).sin();
+        if t > 0.1 {
+            draw.polyline().weight(5.0).points(points_vec)
+                .color(srgb(t, 0.0, 0.0));
+        }
     }
 
     draw.to_frame(app, &frame).unwrap();
