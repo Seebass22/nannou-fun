@@ -14,9 +14,9 @@ fn model(app: &App) -> Model {
 
     let radius = 1.0;
     for theta in (0..=180).step_by(10) {
-        for phi in (0..=360).step_by(1) {
+        for phi in (0..=3600).step_by(1) {
             let theta = (theta as f32).deg_to_rad();
-            let phi = (phi as f32).deg_to_rad();
+            let phi = (phi as f32 * 0.1).deg_to_rad();
             let x = radius * theta.sin() * phi.cos();
             let y = radius * theta.sin() * phi.sin();
             let z = radius * theta.cos();
@@ -68,12 +68,15 @@ fn view(app: &App, model: &Model, frame: Frame) {
     let mut colors_vec = Vec::new();
 
     for (i, point) in model.points.clone().iter_mut().enumerate() {
-        let i = (i % 361) as f32;
+        let i = (i % 3601) as f32 * 0.1;
         let periods = 20.0;
+
+        let rot_scale = 2.0 * (3.5 * app.time).sin();
 
         let wave_value = 2.0 * (i.deg_to_rad() * periods).sin();
         rotate_x(point, app.time.sin());
-        *point *= 4.0 * map_range(y_scale * wave_value, -1.0, 1.0, 1.0, 1.2) * (300.0 * app.time).sin();
+        rotate_y(point, rot_scale * wave_value + app.time.sin());
+        *point *= 4.0 * map_range(y_scale * wave_value, -1.0, 1.0, 1.0, 1.2);
 
         let z = point.z - 10.0;
         let x = point.x / (0.01 * z);
@@ -81,7 +84,7 @@ fn view(app: &App, model: &Model, frame: Frame) {
 
         points_vec.push(Vec2::new(10.0 * x, 10.0 * y));
         colors_vec.push(*point);
-        if points_vec.len() == 361 {
+        if points_vec.len() == 3601 {
             points.push((points_vec.clone(), colors_vec.clone()));
             points_vec.clear();
             colors_vec.clear();
@@ -96,7 +99,7 @@ fn view(app: &App, model: &Model, frame: Frame) {
         let r = map_range((2.0 * app.time + 0.005 * x).sin() * z, -1.0, 1.0, 0.0, 1.0);
         let g = map_range(x, -1.0, 1.0, 0.0, 1.0);
         let b = map_range(y, -1.0, 1.0, 0.0, 1.0);
-        draw.polyline().weight(2.0).points(points_vec)
+        draw.polyline().weight(0.2).points(points_vec)
             .color(srgb(r, g, b));
     }
 
