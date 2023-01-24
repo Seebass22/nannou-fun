@@ -60,19 +60,23 @@ fn view(app: &App, model: &Model, frame: Frame) {
     let draw = app.draw();
     draw.background().color(BLACK);
 
-    let y_scale = map_range(app.mouse.y, 0.0, 2000.0, 0.5, 8.0);
+    let y_scale_time_mult = map_range((0.3 * app.time).sin(), -1.0, 1.0, 1.0, 40.0);
+    let y_scale = map_range((y_scale_time_mult * app.time).sin(), -1.0, 1.0, 0.0, 1.0);
 
     let mut points: Vec<(Vec<Vec2>, Vec<Vec3>)> = Vec::new();
     let mut points_vec = Vec::new();
     let mut colors_vec = Vec::new();
 
-    for point in model.points.clone().iter_mut() {
+    for (i, point) in model.points.clone().iter_mut().enumerate() {
+        let i = (i % 361) as f32;
+        let periods = 30.0;
+        let wave_value = (i.deg_to_rad() * periods).sin();
         rotate_x(point, app.time.sin());
-        *point *= map_range((525.5 * app.time).sin(), -1.0, 1.0, 1.0, 5.0);
+        *point *= 4.0 * map_range(y_scale * wave_value, -1.0, 1.0, 1.0, 1.2);
 
         let z = point.z - 10.0;
         let x = point.x / (0.01 * z);
-        let y = (y_scale * x).sin() + point.y / (0.01 * z);
+        let y = point.y / (0.01 * z);
 
         points_vec.push(Vec2::new(10.0 * x, 10.0 * y));
         colors_vec.push(*point);
@@ -85,12 +89,12 @@ fn view(app: &App, model: &Model, frame: Frame) {
 
     for (points_vec, colors_vec) in points.into_iter() {
         let x = colors_vec[0].x;
+        let y = colors_vec[0].y;
         let z = colors_vec[0].z;
 
-        let r = map_range((108.0 * app.time + 0.005 * x).sin() * z, -1.0, 1.0, 0.0, 1.0);
-        let g = 0.0;
-        let b = 0.0;
-
+        let r = map_range((2.0 * app.time + 0.005 * x).sin() * z, -1.0, 1.0, 0.0, 1.0);
+        let g = map_range(x, -1.0, 1.0, 0.0, 1.0);
+        let b = map_range(y, -1.0, 1.0, 0.0, 1.0);
         draw.polyline().weight(2.0).points(points_vec)
             .color(srgb(r, g, b));
     }
