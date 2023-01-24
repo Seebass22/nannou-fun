@@ -73,7 +73,7 @@ fn view(app: &App, model: &Model, frame: Frame) {
 
         let wave_value = 2.0 * (i.deg_to_rad() * periods).sin();
         rotate_x(point, app.time.sin());
-        *point *= 4.0 * map_range(y_scale * wave_value, -1.0, 1.0, 1.0, 1.2) * (5.0 * app.time).sin();
+        *point *= 4.0 * map_range(y_scale * wave_value, -1.0, 1.0, 1.0, 1.2) * (15.0 * app.time).sin();
 
         let z = point.z - 10.0;
         let x = point.x / (0.01 * z);
@@ -88,15 +88,10 @@ fn view(app: &App, model: &Model, frame: Frame) {
         }
     }
 
-    let strobe_intensity = map_range(app.mouse.y, -1000.0, 1000.0, 1.0, 100.0);
-    for (points_vec, _colors_vec) in points.into_iter() {
-        let t = if (strobe_intensity * app.time).sin() > 0.0 {
-            1.0
-        } else {
-            0.0
-        };
+    for (points_vec, colors_vec) in points.into_iter() {
+        let r = colors_vec[0].z;
         draw.polyline().weight(2.0).points(points_vec)
-            .color(srgb(t, t, t));
+            .color(srgb(r, 0.0, 0.0));
     }
 
     draw.to_frame(app, &frame).unwrap();
