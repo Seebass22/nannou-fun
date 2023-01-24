@@ -1,4 +1,5 @@
 use nannou::{prelude::*, math::ConvertAngle};
+use rand::prelude::*;
 
 struct Model {
     points: Vec<Vec3>,
@@ -60,6 +61,7 @@ fn view(app: &App, model: &Model, frame: Frame) {
     let draw = app.draw();
     draw.background().color(BLACK);
 
+    let mut rng = rand::thread_rng();
     let y_scale_time_mult = 4.0;
     let y_scale = map_range((y_scale_time_mult * app.time).sin(), -1.0, 1.0, 0.0, 1.0);
 
@@ -71,7 +73,8 @@ fn view(app: &App, model: &Model, frame: Frame) {
         let i = (i % 361) as f32;
         let periods = 20.0;
 
-        let wave_value = 2.0 * (i.deg_to_rad() * periods).sin();
+        let rand_mult: f32 = rng.gen();
+        let wave_value = 2.0 * rand_mult * (i.deg_to_rad() * periods).sin();
         rotate_x(point, app.time.sin());
         *point *= 4.0 * map_range(y_scale * wave_value, -1.0, 1.0, 1.0, 1.2);
 
