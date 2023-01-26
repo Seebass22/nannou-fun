@@ -73,7 +73,7 @@ fn view(app: &App, model: &Model, frame: Frame) {
 
         let wave_value = 2.0 * (i.deg_to_rad() * periods).sin();
         rotate_x(point, app.time.sin());
-        *point *= 4.0 * map_range(y_scale * wave_value, -1.0, 1.0, 1.0, 1.2) * (15.0 * app.time).sin();
+        *point *= 4.0 * map_range(y_scale * wave_value, -1.0, 1.0, 1.0, 1.2) * (150.0 * app.time).sin();
 
         let z = point.z - 10.0;
         let x = point.x / (0.01 * z);
@@ -90,8 +90,10 @@ fn view(app: &App, model: &Model, frame: Frame) {
 
     for (points_vec, colors_vec) in points.into_iter() {
         let r = colors_vec[0].z;
-        draw.polyline().weight(2.0).points(points_vec)
-            .color(srgb(r, 0.0, 0.0));
+        if r > 0.1 {
+            draw.polyline().weight(2.0).points(points_vec)
+                .color(srgb(r, 0.0, 0.0));
+        }
     }
 
     draw.to_frame(app, &frame).unwrap();
