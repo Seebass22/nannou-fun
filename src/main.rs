@@ -13,7 +13,7 @@ fn model(app: &App) -> Model {
     let mut points = Vec::new();
 
     let radius = 1.0;
-    for theta in (0..=180).step_by(5) {
+    for theta in (0..=180).step_by(10) {
         for phi in (0..=360).step_by(1) {
             let theta = (theta as f32).deg_to_rad();
             let phi = (phi as f32).deg_to_rad();
@@ -60,13 +60,20 @@ fn view(app: &App, model: &Model, frame: Frame) {
     let draw = app.draw();
     draw.background().color(BLACK);
 
+    let y_scale_time_mult = 5.0;
+    let y_scale = map_range((y_scale_time_mult * app.time).sin(), -1.0, 1.0, 0.0, 1.0);
+
     let mut points: Vec<(Vec<Vec2>, Vec<Vec3>)> = Vec::new();
     let mut points_vec = Vec::new();
     let mut colors_vec = Vec::new();
 
-    for point in model.points.clone().iter_mut() {
-        rotate_x(point, 0.7 * app.time.sin());
-        *point *= 4.0;
+    for (i, point) in model.points.clone().iter_mut().enumerate() {
+        let i = (i % 361) as f32;
+        let periods = 20.0;
+
+        let wave_value = 2.0 * (i.deg_to_rad() * periods).sin();
+        rotate_x(point, app.time.sin());
+        *point *= 4.0 * map_range(y_scale * wave_value, -1.0, 1.0, 1.0, 1.2) * (2.0 * app.time).sin();
 
         let z = point.z - 10.0;
         let x = point.x / (0.01 * z);
@@ -81,11 +88,11 @@ fn view(app: &App, model: &Model, frame: Frame) {
         }
     }
 
-    for (i, (points_vec, _colors_vec)) in points.into_iter().enumerate() {
-        let t = (i as f32 * 0.08 + 2.0 * app.time).sin();
-        if t > 0.1 {
-            draw.polyline().weight(5.0).points(points_vec)
-                .color(srgb(t, 0.0, 0.0));
+    for (points_vec, colors_vec) in points.into_iter() {
+        let r = colors_vec[0].z;
+        if r > 0.1 {
+            draw.polyline().weight(2.0).points(points_vec)
+                .color(srgb(r, 0.0, 0.0));
         }
     }
 
