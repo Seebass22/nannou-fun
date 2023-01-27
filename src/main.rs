@@ -2,14 +2,25 @@ use nannou::{prelude::*, math::ConvertAngle};
 
 struct Model {
     points: Vec<Vec3>,
+    time_start: f32,
+    active_left: bool,
 }
 
 fn main() {
     nannou::app(model).update(update).run();
 }
+fn mouse_pressed(app: &App, model: &mut Model, button: MouseButton) {
+    if button == MouseButton::Left {
+        model.time_start = app.time;
+        model.active_left = true;
+    } else {
+        model.time_start = app.time;
+        model.active_left = false;
+    }
+}
 
 fn model(app: &App) -> Model {
-    let _window = app.new_window().view(view).size(1920, 1080).build().unwrap();
+    let _window = app.new_window().view(view).size(1920, 1080).mouse_pressed(mouse_pressed).build().unwrap();
     let mut points = Vec::new();
 
     let radius = 1.0;
@@ -24,7 +35,11 @@ fn model(app: &App) -> Model {
         }
     }
 
-    Model { points }
+    Model {
+        points,
+        time_start: 0.0,
+        active_left: true,
+    }
 }
 
 fn update(_app: &App, model: &mut Model, _update: Update) {
@@ -84,17 +99,30 @@ fn view(app: &App, model: &Model, frame: Frame) {
         }
     }
 
-    for (points_vec, colors_vec) in points.into_iter() {
+    for (i, (points_vec, colors_vec)) in points.into_iter().enumerate() {
         let x = colors_vec[0].x;
         let y = colors_vec[0].y;
         let z = colors_vec[0].z;
 
-        let r = map_range((2.0 * app.time + 0.005 * x).sin() * z, -1.0, 1.0, 0.0, 1.0);
-        let g = map_range(x, -1.0, 1.0, 0.0, 1.0);
-        let b = map_range(y, -1.0, 1.0, 0.0, 1.0);
-        draw.polyline().weight(1.0).points(points_vec)
+        let time_since_click = app.time - model.time_start;
+        let show = (0.05 * i as f32 + 5.0 * time_since_click).sin();
+
+        let mult = if show > 0.9 && time_since_click < 1.0 {
+            1.0
+        } else {
+            0.0
+        };
+
+        let r = if model.active_left {
+            mult * 0.0
+        } else {
+            mult * 1.0
+        };
+        let g = mult * map_range(x, -1.0, 1.0, 0.0, 1.0);
+        let b = mult * map_range(y, -1.0, 1.0, 0.0, 1.0);
+        draw.polyline().weight(8.0).points(points_vec)
             .color(srgb(r, g, b));
-    }
+    };
 
     draw.to_frame(app, &frame).unwrap();
 }
