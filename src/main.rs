@@ -4,11 +4,13 @@ struct Model {
     points: Vec<Vec3>,
     time_start: f32,
     active_left: bool,
+    key_offset: usize,
 }
 
 fn main() {
     nannou::app(model).update(update).run();
 }
+
 fn mouse_pressed(app: &App, model: &mut Model, button: MouseButton) {
     if button == MouseButton::Left {
         model.time_start = app.time;
@@ -19,8 +21,34 @@ fn mouse_pressed(app: &App, model: &mut Model, button: MouseButton) {
     }
 }
 
+fn key_pressed(app: &App, model: &mut Model, key: Key) {
+    let keys = [
+        Key::Q, Key::W, Key::E, Key::R, Key::T, Key::Y, Key::U, Key::I, Key::O, Key::P,
+    ];
+
+    let pos = keys.iter().position(|k| *k == key);
+
+    model.key_offset = if let Some(pos) = pos {
+        if pos != 0 {
+            pos
+        } else {
+            model.key_offset
+        }
+    } else {
+        0
+    };
+    model.time_start = app.time;
+}
+
 fn model(app: &App) -> Model {
-    let _window = app.new_window().view(view).size(1920, 1080).mouse_pressed(mouse_pressed).build().unwrap();
+    let _window = app
+        .new_window()
+        .view(view)
+        .size(1920, 1080)
+        .mouse_pressed(mouse_pressed)
+        .key_pressed(key_pressed)
+        .build()
+        .unwrap();
     let mut points = Vec::new();
 
     let radius = 1.0;
@@ -39,6 +67,7 @@ fn model(app: &App) -> Model {
         points,
         time_start: 0.0,
         active_left: true,
+        key_offset: 0,
     }
 }
 
@@ -74,7 +103,6 @@ fn rotate_y(point: &mut Vec3, angle: f32) {
 fn view(app: &App, model: &Model, frame: Frame) {
     let draw = app.draw();
     draw.background().color(BLACK);
-
     let y_scale = 5.0 * (5.0 * app.time).sin();
 
     let mut points: Vec<(Vec<Vec2>, Vec<Vec3>)> = Vec::new();
@@ -113,11 +141,8 @@ fn view(app: &App, model: &Model, frame: Frame) {
             0.0
         };
 
-        let r = if model.active_left {
-            mult * 0.0
-        } else {
-            mult * 1.0
-        };
+        let r = mult * 0.1 * model.key_offset as f32;
+
         let g = mult * map_range(x, -1.0, 1.0, 0.0, 1.0);
         let b = mult * map_range(y, -1.0, 1.0, 0.0, 1.0);
         draw.polyline().weight(8.0).points(points_vec)
