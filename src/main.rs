@@ -109,11 +109,11 @@ fn view(app: &App, model: &Model, frame: Frame) {
     let mut points_vec = Vec::new();
     let mut colors_vec = Vec::new();
 
+    let periods = (model.bounce_val) +  20.0;
     for (i, point) in model.points.clone().iter_mut().enumerate() {
         let i = (i % 361) as f32;
         rotate_x(point, app.time.sin());
 
-        let periods = 20.0;
         let wave_value = 0.2 * (i.deg_to_rad() * periods).sin();
         *point *= 4.0 * map_range(y_scale * wave_value, -1.0, 1.0, 1.0, 1.2);
 
@@ -147,8 +147,10 @@ fn view(app: &App, model: &Model, frame: Frame) {
 
         let g = mult * map_range(x, -1.0, 1.0, 0.0, 1.0);
         let b = mult * map_range(y, -1.0, 1.0, 0.0, 1.0);
-        draw.polyline().weight(8.0).points(points_vec)
+        if r > 0.2 || g > 0.2 || b > 0.2 {
+        draw.polyline().weight(12.0).points(points_vec)
             .color(srgb(r, g, b));
+        }
     };
 
     draw.to_frame(app, &frame).unwrap();
