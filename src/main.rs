@@ -5,6 +5,7 @@ struct Model {
     time_start: f32,
     active_left: bool,
     key_offset: usize,
+    bounce_val: f32,
 }
 
 fn main() {
@@ -15,13 +16,15 @@ fn mouse_pressed(app: &App, model: &mut Model, button: MouseButton) {
     if button == MouseButton::Left {
         model.time_start = app.time;
         model.active_left = true;
+        model.bounce_val += 10.0;
     } else {
         model.time_start = app.time;
         model.active_left = false;
+        model.bounce_val += 30.0;
     }
 }
 
-fn key_pressed(app: &App, model: &mut Model, key: Key) {
+fn key_pressed(_app: &App, model: &mut Model, key: Key) {
     let keys = [
         Key::Q, Key::W, Key::E, Key::R, Key::T, Key::Y, Key::U, Key::I, Key::O, Key::P,
     ];
@@ -29,15 +32,10 @@ fn key_pressed(app: &App, model: &mut Model, key: Key) {
     let pos = keys.iter().position(|k| *k == key);
 
     model.key_offset = if let Some(pos) = pos {
-        if pos != 0 {
             pos
-        } else {
-            model.key_offset
-        }
     } else {
         0
     };
-    model.time_start = app.time;
 }
 
 fn model(app: &App) -> Model {
@@ -68,6 +66,7 @@ fn model(app: &App) -> Model {
         time_start: 0.0,
         active_left: true,
         key_offset: 0,
+        bounce_val: 0.0,
     }
 }
 
@@ -77,6 +76,7 @@ fn update(_app: &App, model: &mut Model, _update: Update) {
         rotate_y(point, 0.002);
         rotate_z(point, 0.003);
     }
+    model.bounce_val *= 0.967;
 }
 
 fn rotate_z(point: &mut Vec3, angle: f32) {
@@ -103,7 +103,7 @@ fn rotate_y(point: &mut Vec3, angle: f32) {
 fn view(app: &App, model: &Model, frame: Frame) {
     let draw = app.draw();
     draw.background().color(BLACK);
-    let y_scale = 5.0 * (5.0 * app.time).sin();
+    let y_scale = model.bounce_val;
 
     let mut points: Vec<(Vec<Vec2>, Vec<Vec3>)> = Vec::new();
     let mut points_vec = Vec::new();
@@ -112,11 +112,14 @@ fn view(app: &App, model: &Model, frame: Frame) {
     for (i, point) in model.points.clone().iter_mut().enumerate() {
         let i = (i % 361) as f32;
         rotate_x(point, app.time.sin());
-        *point *= 4.0;
+
+        let periods = 20.0;
+        let wave_value = 0.2 * (i.deg_to_rad() * periods).sin();
+        *point *= 4.0 * map_range(y_scale * wave_value, -1.0, 1.0, 1.0, 1.2);
 
         let z = point.z - 10.0;
         let x = point.x / (0.01 * z);
-        let y = (i.deg_to_rad() * 10.0).sin() * y_scale +  point.y / (0.01 * z);
+        let y = point.y / (0.01 * z);
 
         points_vec.push(Vec2::new(10.0 * x, 10.0 * y));
         colors_vec.push(*point);
@@ -130,7 +133,6 @@ fn view(app: &App, model: &Model, frame: Frame) {
     for (i, (points_vec, colors_vec)) in points.into_iter().enumerate() {
         let x = colors_vec[0].x;
         let y = colors_vec[0].y;
-        let z = colors_vec[0].z;
 
         let time_since_click = app.time - model.time_start;
         let show = (0.05 * i as f32 + 5.0 * time_since_click).sin();
