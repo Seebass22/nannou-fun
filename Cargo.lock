@@ -1159,6 +1159,7 @@ name = "nannou-test"
 version = "0.1.0"
 dependencies = [
  "nannou",
+ "nannou_osc",
  "rand 0.8.5",
 ]
 
@@ -1182,6 +1183,15 @@ checksum = "da3ceb90554c048fb5f29a19820d3581d4fb85fe22e6f27d21faca0dbfab5e07"
 dependencies = [
  "nannou_core",
  "serde",
+]
+
+[[package]]
+name = "nannou_osc"
+version = "0.18.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f9995e9e5af9e50a05aa056f261e1ebb27b46409f1ff3bb219a0a2277574785c"
+dependencies = [
+ "rosc",
 ]
 
 [[package]]
@@ -1712,6 +1722,15 @@ name = "renderdoc-sys"
 version = "0.7.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f1382d1f0a252c4bf97dc20d979a2fdd05b024acd7c2ed0f7595d7817666a157"
+
+[[package]]
+name = "rosc"
+version = "0.1.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "39332ba44e0804497d958f692a3fbb7dd993cc996070189f40577de87ff1b8d9"
+dependencies = [
+ "byteorder",
+]
 
 [[package]]
 name = "rustc-hash"

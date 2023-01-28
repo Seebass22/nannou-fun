@@ -1,4 +1,7 @@
 use nannou::{prelude::*, math::ConvertAngle};
+use nannou_osc as osc;
+
+const PORT: u16 = 9000;
 
 struct Model {
     points: Vec<Vec3>,
@@ -6,6 +9,8 @@ struct Model {
     active_left: bool,
     key_offset: usize,
     bounce_val: f32,
+    receiver: osc::Receiver,
+    touch_pos: Vec2,
 }
 
 fn main() {
@@ -49,6 +54,8 @@ fn model(app: &App) -> Model {
         .unwrap();
     let mut points = Vec::new();
 
+    let receiver = osc::receiver(PORT).unwrap();
+
     let radius = 1.0;
     for theta in (0..=180).step_by(10) {
         for phi in (0..=360).step_by(1) {
@@ -67,6 +74,8 @@ fn model(app: &App) -> Model {
         active_left: true,
         key_offset: 0,
         bounce_val: 0.0,
+        receiver,
+        touch_pos: Vec2::new(0.0, 0.0),
     }
 }
 
@@ -77,6 +86,40 @@ fn update(_app: &App, model: &mut Model, _update: Update) {
         rotate_z(point, 0.003);
     }
     model.bounce_val *= 0.967;
+
+    let mut should_bounce = false;
+    for (packet, _addr) in model.receiver.try_iter() {
+        dbg!(&packet);
+        if let osc::Packet::Message(msg) = packet.clone() {
+            match msg.args {
+                Some(args) => {
+                    if let [x, y] = &args[..] {
+                        if let osc::Type::Float(x) = x {
+                            if *x != -1.0 {
+                                model.touch_pos.x = *x;
+                            } else {
+                                should_bounce = true;
+                            }
+                        }
+                        if let osc::Type::Float(y) = y {
+                            if *y != -1.0 {
+                                model.touch_pos.y = *y;
+                            } else {
+                                should_bounce = true;
+                            }
+                        }
+                    }
+                },
+                _ => { panic!() },
+            }
+        }
+
+        if model.bounce_val < 100.0 && should_bounce {
+            model.time_start = _app.time;
+            model.active_left = true;
+            model.bounce_val += model.touch_pos.y * 5.0;
+        }
+    }
 }
 
 fn rotate_z(point: &mut Vec3, angle: f32) {
@@ -143,7 +186,7 @@ fn view(app: &App, model: &Model, frame: Frame) {
             0.0
         };
 
-        let r = mult * 0.1 * model.key_offset as f32;
+        let r = mult * model.touch_pos.x;
 
         let g = mult * map_range(x, -1.0, 1.0, 0.0, 1.0);
         let b = mult * map_range(y, -1.0, 1.0, 0.0, 1.0);

@@ -8,3 +8,4 @@ edition = "2021"
 [dependencies]
 nannou = "0.18.1"
 rand = "0.8.5"
+nannou_osc = "0.18.0"
