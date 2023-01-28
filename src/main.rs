@@ -1,43 +1,18 @@
-use nannou::{prelude::*, math::ConvertAngle};
+use nannou::{math::ConvertAngle, prelude::*};
 use nannou_osc as osc;
 
 const PORT: u16 = 9000;
 
 struct Model {
     points: Vec<Vec3>,
-    time_start: f32,
-    key_offset: usize,
     bounce_val: f32,
     receiver: osc::Receiver,
     touch_pos: Vec2,
+    sensor: Vec3,
 }
 
 fn main() {
     nannou::app(model).update(update).run();
-}
-
-fn mouse_pressed(app: &App, model: &mut Model, button: MouseButton) {
-    if button == MouseButton::Left {
-        model.time_start = app.time;
-        model.bounce_val += 10.0;
-    } else {
-        model.time_start = app.time;
-        model.bounce_val += 30.0;
-    }
-}
-
-fn key_pressed(_app: &App, model: &mut Model, key: Key) {
-    let keys = [
-        Key::Q, Key::W, Key::E, Key::R, Key::T, Key::Y, Key::U, Key::I, Key::O, Key::P,
-    ];
-
-    let pos = keys.iter().position(|k| *k == key);
-
-    model.key_offset = if let Some(pos) = pos {
-        pos
-    } else {
-        0
-    };
 }
 
 fn model(app: &App) -> Model {
@@ -45,8 +20,6 @@ fn model(app: &App) -> Model {
         .new_window()
         .view(view)
         .size(1920, 1080)
-        .mouse_pressed(mouse_pressed)
-        .key_pressed(key_pressed)
         .build()
         .unwrap();
     let mut points = Vec::new();
@@ -67,11 +40,10 @@ fn model(app: &App) -> Model {
 
     Model {
         points,
-        time_start: 0.0,
-        key_offset: 0,
         bounce_val: 0.0,
         receiver,
         touch_pos: Vec2::new(0.0, 0.0),
+        sensor: Vec3::new(0.0, 0.0, 0.0),
     }
 }
 
@@ -86,38 +58,33 @@ fn update(_app: &App, model: &mut Model, _update: Update) {
     let mut should_bounce = false;
 
     for (packet, _addr) in model.receiver.try_iter() {
-        dbg!(&packet);
         if let osc::Packet::Message(msg) = packet.clone() {
-            match msg.args {
-                Some(args) => {
-                    let args: Vec<_> = args.iter().map(|x| {
-                        if let osc::Type::Float(x) = x {
-                            *x
-                        } else {
-                            0.0
-                        }
-                    }).collect();
+            let mut osc_args = vec![];
+            if let Some(args) = msg.args {
+                osc_args = args
+                    .iter()
+                    .map(|x| if let osc::Type::Float(x) = x { *x } else { 0.0 })
+                    .collect();
+            }
 
-                    if let [x, y] = &args[..] {
-                        if *x != -1.0 {
-                            model.touch_pos.x = *x;
-                        }
-                        if *y != -1.0 {
-                            model.touch_pos.y = *y;
-                        }
-                        if *x == -1.0 && *y == -1.0 {
-                            should_bounce = true;
-                        }
-                    }
-                },
-                _ => { panic!() },
+            if !msg.addr.starts_with("/touch") {
+                if let [x, y, z] = &osc_args[..] {
+                    model.sensor = Vec3::new(*x, *y, *z);
+                }
+            } else if let [x, y] = &osc_args[..] {
+                if *x != -1.0 {
+                    model.touch_pos.x = *x;
+                    model.touch_pos.y = *y;
+                }
+                if *x == -1.0 && *y == -1.0 {
+                    should_bounce = true;
+                }
             }
         }
+    }
 
-        if model.bounce_val < 100.0 && should_bounce {
-            model.time_start = _app.time;
-            model.bounce_val += model.touch_pos.y * 5.0;
-        }
+    if model.bounce_val < 100.0 && should_bounce {
+        model.bounce_val += model.touch_pos.y * 5.0;
     }
 }
 
@@ -145,16 +112,15 @@ fn rotate_y(point: &mut Vec3, angle: f32) {
 fn view(app: &App, model: &Model, frame: Frame) {
     let draw = app.draw();
     draw.background().color(BLACK);
-    let y_scale = model.touch_pos.y * 15.0;
+    let y_scale = model.bounce_val + model.sensor.x;
 
     let mut points: Vec<(Vec<Vec2>, Vec<Vec3>)> = Vec::new();
     let mut points_vec = Vec::new();
     let mut colors_vec = Vec::new();
 
-    let periods = (model.bounce_val) +  20.0;
+    let periods = 10.0 * model.touch_pos.y + (model.bounce_val) + 20.0;
     for (i, point) in model.points.clone().iter_mut().enumerate() {
         let i = (i % 361) as f32;
-        rotate_x(point, app.time.sin());
 
         let wave_value = 0.2 * (i.deg_to_rad() * periods).sin();
         *point *= 4.0 * map_range(y_scale * wave_value, -1.0, 1.0, 1.0, 1.2);
@@ -181,10 +147,12 @@ fn view(app: &App, model: &Model, frame: Frame) {
         let g = map_range(x, -1.0, 1.0, 0.0, 1.0);
         let b = map_range(y, -1.0, 1.0, 0.0, 1.0);
         if r > 0.2 || g > 0.2 || b > 0.2 {
-            draw.polyline().weight(2.0).points(points_vec)
+            draw.polyline()
+                .weight(8.0)
+                .points(points_vec)
                 .color(srgb(r, g, b));
         }
-    };
+    }
 
     draw.to_frame(app, &frame).unwrap();
 }
