@@ -6,7 +6,6 @@ const PORT: u16 = 9000;
 struct Model {
     points: Vec<Vec3>,
     time_start: f32,
-    active_left: bool,
     key_offset: usize,
     bounce_val: f32,
     receiver: osc::Receiver,
@@ -20,11 +19,9 @@ fn main() {
 fn mouse_pressed(app: &App, model: &mut Model, button: MouseButton) {
     if button == MouseButton::Left {
         model.time_start = app.time;
-        model.active_left = true;
         model.bounce_val += 10.0;
     } else {
         model.time_start = app.time;
-        model.active_left = false;
         model.bounce_val += 30.0;
     }
 }
@@ -37,7 +34,7 @@ fn key_pressed(_app: &App, model: &mut Model, key: Key) {
     let pos = keys.iter().position(|k| *k == key);
 
     model.key_offset = if let Some(pos) = pos {
-            pos
+        pos
     } else {
         0
     };
@@ -71,7 +68,6 @@ fn model(app: &App) -> Model {
     Model {
         points,
         time_start: 0.0,
-        active_left: true,
         key_offset: 0,
         bounce_val: 0.0,
         receiver,
@@ -88,25 +84,29 @@ fn update(_app: &App, model: &mut Model, _update: Update) {
     model.bounce_val *= 0.967;
 
     let mut should_bounce = false;
+
     for (packet, _addr) in model.receiver.try_iter() {
         dbg!(&packet);
         if let osc::Packet::Message(msg) = packet.clone() {
             match msg.args {
                 Some(args) => {
-                    if let [x, y] = &args[..] {
+                    let args: Vec<_> = args.iter().map(|x| {
                         if let osc::Type::Float(x) = x {
-                            if *x != -1.0 {
-                                model.touch_pos.x = *x;
-                            } else {
-                                should_bounce = true;
-                            }
+                            *x
+                        } else {
+                            0.0
                         }
-                        if let osc::Type::Float(y) = y {
-                            if *y != -1.0 {
-                                model.touch_pos.y = *y;
-                            } else {
-                                should_bounce = true;
-                            }
+                    }).collect();
+
+                    if let [x, y] = &args[..] {
+                        if *x != -1.0 {
+                            model.touch_pos.x = *x;
+                        }
+                        if *y != -1.0 {
+                            model.touch_pos.y = *y;
+                        }
+                        if *x == -1.0 && *y == -1.0 {
+                            should_bounce = true;
                         }
                     }
                 },
@@ -116,7 +116,6 @@ fn update(_app: &App, model: &mut Model, _update: Update) {
 
         if model.bounce_val < 100.0 && should_bounce {
             model.time_start = _app.time;
-            model.active_left = true;
             model.bounce_val += model.touch_pos.y * 5.0;
         }
     }
@@ -146,7 +145,7 @@ fn rotate_y(point: &mut Vec3, angle: f32) {
 fn view(app: &App, model: &Model, frame: Frame) {
     let draw = app.draw();
     draw.background().color(BLACK);
-    let y_scale = model.bounce_val;
+    let y_scale = model.touch_pos.y * 15.0;
 
     let mut points: Vec<(Vec<Vec2>, Vec<Vec3>)> = Vec::new();
     let mut points_vec = Vec::new();
@@ -173,26 +172,17 @@ fn view(app: &App, model: &Model, frame: Frame) {
         }
     }
 
-    for (i, (points_vec, colors_vec)) in points.into_iter().enumerate() {
+    for (points_vec, colors_vec) in points.into_iter() {
         let x = colors_vec[0].x;
         let y = colors_vec[0].y;
 
-        let time_since_click = app.time - model.time_start;
-        let show = (0.05 * i as f32 + 5.0 * time_since_click).sin();
+        let r = model.touch_pos.x;
 
-        let mult = if show > 0.9 && time_since_click < 1.0 {
-            1.0
-        } else {
-            0.0
-        };
-
-        let r = mult * model.touch_pos.x;
-
-        let g = mult * map_range(x, -1.0, 1.0, 0.0, 1.0);
-        let b = mult * map_range(y, -1.0, 1.0, 0.0, 1.0);
+        let g = map_range(x, -1.0, 1.0, 0.0, 1.0);
+        let b = map_range(y, -1.0, 1.0, 0.0, 1.0);
         if r > 0.2 || g > 0.2 || b > 0.2 {
-        draw.polyline().weight(12.0).points(points_vec)
-            .color(srgb(r, g, b));
+            draw.polyline().weight(2.0).points(points_vec)
+                .color(srgb(r, g, b));
         }
     };
 
