@@ -68,7 +68,7 @@ fn view(app: &App, model: &Model, frame: Frame) {
     for (i, point) in model.points.clone().iter_mut().enumerate() {
 
         let i = (i % 361) as f32;
-        let periods = 50.0;
+        let periods = map_range((0.5 * app.time).sin().abs(), 0.0, 1.0, 0.0, 20.0);
         let ring_mult = map_range((ring_i as f32 * 0.9 + 12.0 * app.time).sin(), -1.0, 1.0, 1.0, 1.5);
 
         let wave_value = 2.0 * (i.deg_to_rad() * periods).sin();
