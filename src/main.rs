@@ -33,13 +33,13 @@ fn update(_app: &App, model: &mut Model, _update: Update) {
     model.locations.push(new_pos);
 
     let direction = new_pos - model.camera_pos;
-    model.camera_pos += 0.002 * direction;
+    model.camera_pos += 0.01 * direction;
 }
 
 fn step(pos: &mut Vec3) {
     let mut rng = thread_rng();
     let rand: u8 = rng.gen();
-    let distance = 0.4;
+    let distance = 1.4;
     let dir = if rand % 2 == 0 { 1.0 } else { -1.0 };
     match rand % 3 {
         0 => {
@@ -79,10 +79,15 @@ fn _rotate_y(point: &mut Vec3, angle: f32) {
 }
 
 fn to_screen_position(point: &Vec3) -> Vec2 {
-    let z = point.z - 10.0;
-    let x = point.x / (0.01 * z);
-    let y = point.y / (0.01 * z);
-    Vec2::new(10.0 * x, 10.0 * y)
+    let z = point.z;
+    let x = point.x + (0.4 * z);
+    let y = point.y + (0.4 * z);
+    Vec2::new(50.0 * x, 50.0 * y)
+
+    // let z = point.z - 10.0;
+    // let x = point.x / (0.01 * z);
+    // let y = point.y / (0.01 * z);
+    // Vec2::new(10.0 * x, 10.0 * y)
 }
 
 fn magnitude(points: &[Vec2]) -> f32 {
