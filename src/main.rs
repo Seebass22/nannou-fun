@@ -2,8 +2,7 @@ use nannou::prelude::*;
 use rand::prelude::*;
 
 struct Model {
-    old_location: Vec3,
-    location: Vec3,
+    locations: Vec<Vec3>,
 }
 
 fn main() {
@@ -11,22 +10,25 @@ fn main() {
 }
 
 fn model(app: &App) -> Model {
-    let _window = app.new_window().view(view).size(2560, 1440).build().unwrap();
+    let _window = app
+        .new_window()
+        .view(view)
+        .size(2560, 1440)
+        .build()
+        .unwrap();
     Model {
-        old_location: Vec3::ZERO,
-        location: Vec3::ZERO,
+        locations: Vec::with_capacity(1000),
     }
 }
 
 fn update(_app: &App, model: &mut Model, _update: Update) {
-    model.old_location = model.location;
-    let screen_pos = to_screen_position(&model.location);
-    if !(screen_pos.x.abs() > 1280.0 || screen_pos.y.abs() > 720.0) {
-        step(&mut model.location);
+    let mut new_pos = if let Some(pos) = model.locations.last() {
+        *pos
     } else {
-        model.old_location = Vec3::ZERO;
-        model.location = Vec3::ZERO;
-    }
+        Vec3::ZERO
+    };
+    step(&mut new_pos);
+    model.locations.push(new_pos);
 }
 
 fn step(pos: &mut Vec3) {
@@ -37,14 +39,16 @@ fn step(pos: &mut Vec3) {
     match rand % 3 {
         0 => {
             pos.x += dir * distance;
-        },
+        }
         1 => {
             pos.y += dir * distance;
-        },
+        }
         2 => {
             pos.z += dir * distance;
-        },
-        _ => { panic!() },
+        }
+        _ => {
+            panic!()
+        }
     }
 }
 
@@ -76,24 +80,43 @@ fn to_screen_position(point: &Vec3) -> Vec2 {
     Vec2::new(10.0 * x, 10.0 * y)
 }
 
+fn magnitude(points: &[Vec2]) -> f32 {
+    let inner: f32 = (points[1].x - points[0].x).pow(2) + (points[1].y - points[0].y).pow(2);
+    inner.sqrt()
+}
+
 fn view(app: &App, model: &Model, frame: Frame) {
     let draw = app.draw();
-    if app.elapsed_frames() == 0 {
-        draw.background().color(BLACK);
-    }
+    draw.background().color(WHITE);
 
-    let mut line_points: [Vec2; 2] = [Vec2::ZERO; 2];
-    let mut line_color_points: [Vec3; 2] = [Vec3::ZERO; 2];
-    for (i, point) in [model.old_location, model.location].iter().enumerate() {
-        line_points[i] = to_screen_position(point);
-        line_color_points[i] = *point;
-    }
+    let last_point = if let Some(point) = model.locations.last() {
+        *point
+    } else {
+        Vec3::ZERO
+    };
 
-    let r = map_range(line_color_points[1].x, -5.0, 5.0, 0.0, 1.0);
-    let g = map_range(line_color_points[1].y, -5.0, 5.0, 0.0, 1.0);
-    let b = map_range(line_color_points[1].z, -1.0, 1.0, 0.0, 1.0);
-    draw.polyline().weight(2.0).points(line_points)
-        .color(srgb(r, g, b));
+    for win in model.locations.windows(2) {
+        let mut line_points: [Vec2; 2] = [Vec2::ZERO; 2];
+        let mut line_color_points: [Vec3; 2] = [Vec3::ZERO; 2];
+
+        for (i, point) in win.iter().enumerate() {
+            let mut modified_point = *point;
+            modified_point -= last_point;
+            line_points[i] = to_screen_position(&modified_point);
+            line_color_points[i] = *point;
+        }
+
+        let r = map_range(line_color_points[1].x, -5.0, 5.0, 0.1, 1.0);
+        let g = map_range(line_color_points[1].y, -5.0, 5.0, 0.1, 1.0);
+        let b = map_range(line_color_points[1].z, -1.0, 1.0, 0.1, 1.0);
+
+        if magnitude(&line_points) < 500.0 {
+            draw.polyline()
+                .weight(2.0)
+                .points(line_points)
+                .color(srgb(r, g, b));
+        }
+    }
 
     draw.to_frame(app, &frame).unwrap();
 }
