@@ -39,7 +39,7 @@ fn update(_app: &App, model: &mut Model, _update: Update) {
 fn step(pos: &mut Vec3) {
     let mut rng = thread_rng();
     let rand: u8 = rng.gen();
-    let distance = 0.2;
+    let distance = 0.4;
     let dir = if rand % 2 == 0 { 1.0 } else { -1.0 };
     match rand % 3 {
         0 => {
@@ -105,9 +105,9 @@ fn view(app: &App, model: &Model, frame: Frame) {
             line_color_points[i] = *point;
         }
 
-        let r = map_range(line_color_points[1].x, -5.0, 5.0, 0.1, 1.0);
-        let g = map_range(line_color_points[1].y, -5.0, 5.0, 0.1, 1.0);
-        let b = map_range(line_color_points[1].z, -1.0, 1.0, 0.1, 1.0);
+        let r = map_range(line_color_points[1].x, -50.0, 50.0, 0.1, 1.0);
+        let g = map_range(line_color_points[1].y, -50.0, 50.0, 0.1, 1.0);
+        let b = map_range(line_color_points[1].z, -10.0, 10.0, 0.1, 1.0);
 
         if magnitude(&line_points) < 800.0 {
             draw.polyline()
