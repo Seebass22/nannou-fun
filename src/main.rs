@@ -17,23 +17,28 @@ fn model(app: &App) -> Model {
         .size(2560, 1440)
         .build()
         .unwrap();
+
     Model {
         locations: Vec::with_capacity(8192),
         camera_pos: Vec3::ZERO,
     }
 }
 
-fn update(_app: &App, model: &mut Model, _update: Update) {
+
+fn update(app: &App, model: &mut Model, _update: Update) {
     let mut new_pos = if let Some(pos) = model.locations.last() {
         *pos
     } else {
         Vec3::ZERO
     };
-    step(&mut new_pos);
-    model.locations.push(new_pos);
+    if app.elapsed_frames() % 5 == 0 {
+        step(&mut new_pos);
+        model.locations.push(new_pos);
+    }
 
+    rotate_y(&mut new_pos, app.time);
     let direction = new_pos - model.camera_pos;
-    model.camera_pos += 0.01 * direction;
+    model.camera_pos += 0.05 * direction;
 }
 
 fn step(pos: &mut Vec3) {
@@ -70,7 +75,7 @@ fn _rotate_x(point: &mut Vec3, angle: f32) {
     point.z = point.y * s + point.z * c;
 }
 
-fn _rotate_y(point: &mut Vec3, angle: f32) {
+fn rotate_y(point: &mut Vec3, angle: f32) {
     let s = angle.sin();
     let c = angle.cos();
     point.x = point.x * c - point.z * s;
@@ -78,15 +83,15 @@ fn _rotate_y(point: &mut Vec3, angle: f32) {
 }
 
 fn to_screen_position(point: &Vec3) -> Vec2 {
-    // let z = point.z;
-    // let x = point.x + (0.4 * z);
-    // let y = point.y + (0.4 * z);
-    // Vec2::new(50.0 * x, 50.0 * y)
+    let z = point.z;
+    let x = point.x + (0.4 * z);
+    let y = point.y + (0.4 * z);
+    Vec2::new(50.0 * x, 50.0 * y)
 
-    let z = point.z - 10.0;
-    let x = point.x / (0.01 * z);
-    let y = point.y / (0.01 * z);
-    Vec2::new(10.0 * x, 10.0 * y)
+    // let z = point.z - 10.0;
+    // let x = point.x / (0.01 * z);
+    // let y = point.y / (0.01 * z);
+    // Vec2::new(10.0 * x, 10.0 * y)
 }
 
 fn magnitude(points: &[Vec2]) -> f32 {
@@ -134,10 +139,13 @@ fn draw_line(points: &[Vec3], model: &Model, draw: &Draw) {
 
 fn view(app: &App, model: &Model, frame: Frame) {
     let draw = app.draw();
-    draw.background().color(WHITE);
+    draw.background().color(BLACK);
 
     for point in model.locations.iter() {
-        draw_cube(*point, model, &draw);
+        let mut point = *point;
+        rotate_y(&mut point, app.time);
+
+        draw_cube(point, model, &draw);
     }
 
     draw.to_frame(app, &frame).unwrap();
