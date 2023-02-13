@@ -3,6 +3,7 @@ use rand::prelude::*;
 
 struct Model {
     locations: Vec<Vec3>,
+    camera_pos: Vec3,
 }
 
 fn main() {
@@ -17,7 +18,8 @@ fn model(app: &App) -> Model {
         .build()
         .unwrap();
     Model {
-        locations: Vec::with_capacity(1000),
+        locations: Vec::with_capacity(8192),
+        camera_pos: Vec3::ZERO,
     }
 }
 
@@ -29,6 +31,9 @@ fn update(_app: &App, model: &mut Model, _update: Update) {
     };
     step(&mut new_pos);
     model.locations.push(new_pos);
+
+    let direction = new_pos - model.camera_pos;
+    model.camera_pos += 0.002 * direction;
 }
 
 fn step(pos: &mut Vec3) {
@@ -89,19 +94,13 @@ fn view(app: &App, model: &Model, frame: Frame) {
     let draw = app.draw();
     draw.background().color(WHITE);
 
-    let last_point = if let Some(point) = model.locations.last() {
-        *point
-    } else {
-        Vec3::ZERO
-    };
-
     for win in model.locations.windows(2) {
         let mut line_points: [Vec2; 2] = [Vec2::ZERO; 2];
         let mut line_color_points: [Vec3; 2] = [Vec3::ZERO; 2];
 
         for (i, point) in win.iter().enumerate() {
             let mut modified_point = *point;
-            modified_point -= last_point;
+            modified_point -= model.camera_pos;
             line_points[i] = to_screen_position(&modified_point);
             line_color_points[i] = *point;
         }
@@ -110,7 +109,7 @@ fn view(app: &App, model: &Model, frame: Frame) {
         let g = map_range(line_color_points[1].y, -5.0, 5.0, 0.1, 1.0);
         let b = map_range(line_color_points[1].z, -1.0, 1.0, 0.1, 1.0);
 
-        if magnitude(&line_points) < 500.0 {
+        if magnitude(&line_points) < 800.0 {
             draw.polyline()
                 .weight(2.0)
                 .points(line_points)
