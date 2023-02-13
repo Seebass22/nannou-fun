@@ -78,15 +78,15 @@ fn _rotate_y(point: &mut Vec3, angle: f32) {
 }
 
 fn to_screen_position(point: &Vec3) -> Vec2 {
-    let z = point.z;
-    let x = point.x + (0.4 * z);
-    let y = point.y + (0.4 * z);
-    Vec2::new(50.0 * x, 50.0 * y)
+    // let z = point.z;
+    // let x = point.x + (0.4 * z);
+    // let y = point.y + (0.4 * z);
+    // Vec2::new(50.0 * x, 50.0 * y)
 
-    // let z = point.z - 10.0;
-    // let x = point.x / (0.01 * z);
-    // let y = point.y / (0.01 * z);
-    // Vec2::new(10.0 * x, 10.0 * y)
+    let z = point.z - 10.0;
+    let x = point.x / (0.01 * z);
+    let y = point.y / (0.01 * z);
+    Vec2::new(10.0 * x, 10.0 * y)
 }
 
 fn magnitude(points: &[Vec2]) -> f32 {
