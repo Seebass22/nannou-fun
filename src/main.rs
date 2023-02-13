@@ -11,7 +11,7 @@ fn main() {
 }
 
 fn model(app: &App) -> Model {
-    let _window = app.new_window().view(view).size(1920, 1080).build().unwrap();
+    let _window = app.new_window().view(view).size(2560, 1440).build().unwrap();
     Model {
         old_location: Vec3::ZERO,
         location: Vec3::ZERO,
@@ -20,13 +20,19 @@ fn model(app: &App) -> Model {
 
 fn update(_app: &App, model: &mut Model, _update: Update) {
     model.old_location = model.location;
-    step(&mut model.location);
+    let screen_pos = to_screen_position(&model.location);
+    if !(screen_pos.x.abs() > 1280.0 || screen_pos.y.abs() > 720.0) {
+        step(&mut model.location);
+    } else {
+        model.old_location = Vec3::ZERO;
+        model.location = Vec3::ZERO;
+    }
 }
 
 fn step(pos: &mut Vec3) {
     let mut rng = thread_rng();
     let rand: u8 = rng.gen();
-    let distance = 0.1;
+    let distance = 0.2;
     let dir = if rand % 2 == 0 { 1.0 } else { -1.0 };
     match rand % 3 {
         0 => {
@@ -63,6 +69,13 @@ fn _rotate_y(point: &mut Vec3, angle: f32) {
     point.z = point.x * s + point.z * c;
 }
 
+fn to_screen_position(point: &Vec3) -> Vec2 {
+    let z = point.z - 10.0;
+    let x = point.x / (0.01 * z);
+    let y = point.y / (0.01 * z);
+    Vec2::new(10.0 * x, 10.0 * y)
+}
+
 fn view(app: &App, model: &Model, frame: Frame) {
     let draw = app.draw();
     if app.elapsed_frames() == 0 {
@@ -72,16 +85,15 @@ fn view(app: &App, model: &Model, frame: Frame) {
     let mut line_points: [Vec2; 2] = [Vec2::ZERO; 2];
     let mut line_color_points: [Vec3; 2] = [Vec3::ZERO; 2];
     for (i, point) in [model.old_location, model.location].iter().enumerate() {
-        let z = point.z - 10.0;
-        let x = point.x / (0.01 * z);
-        let y = point.y / (0.01 * z);
-        line_points[i] = Vec2::new(10.0 * x, 10.0 * y);
+        line_points[i] = to_screen_position(point);
         line_color_points[i] = *point;
     }
 
-    let r = 1.0;
+    let r = map_range(line_color_points[1].x, -5.0, 5.0, 0.0, 1.0);
+    let g = map_range(line_color_points[1].y, -5.0, 5.0, 0.0, 1.0);
+    let b = map_range(line_color_points[1].z, -1.0, 1.0, 0.0, 1.0);
     draw.polyline().weight(2.0).points(line_points)
-        .color(srgb(r, 0.0, 0.0));
+        .color(srgb(r, g, b));
 
     draw.to_frame(app, &frame).unwrap();
 }
