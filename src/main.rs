@@ -39,17 +39,16 @@ fn update(_app: &App, model: &mut Model, _update: Update) {
 fn step(pos: &mut Vec3) {
     let mut rng = thread_rng();
     let rand: u8 = rng.gen();
-    let distance = 1.4;
     let dir = if rand % 2 == 0 { 1.0 } else { -1.0 };
     match rand % 3 {
         0 => {
-            pos.x += dir * distance;
+            pos.x += dir;
         }
         1 => {
-            pos.y += dir * distance;
+            pos.y += dir;
         }
         2 => {
-            pos.z += dir * distance;
+            pos.z += dir;
         }
         _ => {
             panic!()
@@ -95,31 +94,50 @@ fn magnitude(points: &[Vec2]) -> f32 {
     inner.sqrt()
 }
 
+fn rot(point: &Vec3) -> Vec3 {
+    Vec3::new(point.y, -point.x, point.z)
+}
+
+fn draw_cube(pos: Vec3, model: &Model, draw: &Draw) {
+    let mut points: [Vec3; 2] = [Vec3::ZERO; 2];
+    let mut last_point = pos;
+    let mut rotation_vec = Vec3::new(0.0, 1.0, 0.0);
+    for _i in 0..4 {
+        points[0] = last_point;
+        points[1] = last_point + rotation_vec;
+        rotation_vec = rot(&rotation_vec);
+        draw_line(&points, model, draw);
+        last_point = points[1];
+    }
+}
+
+fn draw_line(points: &[Vec3], model: &Model, draw: &Draw) {
+    let mut line_points: [Vec2; 2] = [Vec2::ZERO; 2];
+    let mut line_color_points: [Vec3; 2] = [Vec3::ZERO; 2];
+    for (i, point) in points.iter().enumerate() {
+        let mut modified_point = *point;
+        modified_point -= model.camera_pos;
+        line_points[i] = to_screen_position(&modified_point);
+        line_color_points[i] = *point;
+    }
+    let r = map_range(line_color_points[1].x, -50.0, 50.0, 0.1, 1.0);
+    let g = map_range(line_color_points[1].y, -50.0, 50.0, 0.1, 1.0);
+    let b = map_range(line_color_points[1].z, -10.0, 10.0, 0.1, 1.0);
+
+    if magnitude(&line_points) < 800.0 {
+        draw.polyline()
+            .weight(2.0)
+            .points(line_points)
+            .color(srgb(r, g, b));
+    }
+}
+
 fn view(app: &App, model: &Model, frame: Frame) {
     let draw = app.draw();
     draw.background().color(WHITE);
 
-    for win in model.locations.windows(2) {
-        let mut line_points: [Vec2; 2] = [Vec2::ZERO; 2];
-        let mut line_color_points: [Vec3; 2] = [Vec3::ZERO; 2];
-
-        for (i, point) in win.iter().enumerate() {
-            let mut modified_point = *point;
-            modified_point -= model.camera_pos;
-            line_points[i] = to_screen_position(&modified_point);
-            line_color_points[i] = *point;
-        }
-
-        let r = map_range(line_color_points[1].x, -50.0, 50.0, 0.1, 1.0);
-        let g = map_range(line_color_points[1].y, -50.0, 50.0, 0.1, 1.0);
-        let b = map_range(line_color_points[1].z, -10.0, 10.0, 0.1, 1.0);
-
-        if magnitude(&line_points) < 800.0 {
-            draw.polyline()
-                .weight(2.0)
-                .points(line_points)
-                .color(srgb(r, g, b));
-        }
+    for point in model.locations.iter() {
+        draw_cube(*point, model, &draw);
     }
 
     draw.to_frame(app, &frame).unwrap();
