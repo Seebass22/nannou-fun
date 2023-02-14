@@ -117,8 +117,8 @@ fn view(app: &App, model: &Model, frame: Frame) {
             line_color_points[i] = *point;
         }
 
-        let r = map_range(line_color_points[1].x, -50.0, 50.0, 0.1, 1.0);
-        let g = map_range(line_color_points[1].y, -50.0, 50.0, 0.1, 1.0);
+        let r = map_range(line_color_points[1].x, -10.0, 10.0, 0.1, 1.0);
+        let g = map_range(line_color_points[1].y, -10.0, 10.0, 0.1, 1.0);
         let b = map_range(line_color_points[1].z, -10.0, 10.0, 0.1, 1.0);
 
         if magnitude(&line_points) < 800.0 {
