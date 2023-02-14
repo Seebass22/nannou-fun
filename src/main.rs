@@ -19,18 +19,29 @@ fn model(app: &App) -> Model {
         .unwrap();
 
     Model {
-        locations: Vec::with_capacity(8192),
+        locations: Vec::with_capacity(1024),
         camera_pos: Vec3::ZERO,
     }
 }
 
+impl Model {
+    fn reset(&mut self) {
+        self.locations.clear();
+        self.camera_pos = Vec3::ZERO;
+    }
+}
 
 fn update(app: &App, model: &mut Model, _update: Update) {
+    if model.locations.len() == model.locations.capacity() {
+        model.reset();
+    }
+
     let mut new_pos = if let Some(pos) = model.locations.last() {
         *pos
     } else {
         Vec3::ZERO
     };
+
     if app.elapsed_frames() % 5 == 0 {
         step(&mut new_pos);
         model.locations.push(new_pos);
