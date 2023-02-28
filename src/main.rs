@@ -1,9 +1,10 @@
 use nannou::prelude::*;
-use rand::prelude::*;
+use nannou::noise::*;
 
 struct Model {
     locations: Vec<Vec3>,
     camera_pos: Vec3,
+    noise: Perlin,
 }
 
 fn main() {
@@ -19,8 +20,9 @@ fn model(app: &App) -> Model {
         .unwrap();
 
     Model {
-        locations: Vec::with_capacity(2048),
+        locations: Vec::with_capacity(4096),
         camera_pos: Vec3::ZERO,
+        noise: Perlin::new(),
     }
 }
 
@@ -31,7 +33,7 @@ impl Model {
     }
 }
 
-fn update(_app: &App, model: &mut Model, _update: Update) {
+fn update(app: &App, model: &mut Model, _update: Update) {
     if model.locations.len() == model.locations.capacity() {
         model.reset();
     }
@@ -41,32 +43,18 @@ fn update(_app: &App, model: &mut Model, _update: Update) {
     } else {
         Vec3::ZERO
     };
-    step(&mut new_pos);
+    step(&mut new_pos, app.time, model);
     model.locations.push(new_pos);
 
     let direction = new_pos - model.camera_pos;
-    model.camera_pos += 0.005 * direction;
+    model.camera_pos += 0.05 * direction;
 }
 
-fn step(pos: &mut Vec3) {
-    let mut rng = thread_rng();
-    let rand: u8 = rng.gen();
-    let distance = 0.4;
-    let dir = if rand % 2 == 0 { 1.0 } else { -1.0 };
-    match rand % 3 {
-        0 => {
-            pos.x += dir * distance;
-        }
-        1 => {
-            pos.y += dir * distance;
-        }
-        2 => {
-            pos.z += dir * distance;
-        }
-        _ => {
-            panic!()
-        }
-    }
+fn step(pos: &mut Vec3, time: f32, model: &Model) {
+    let sc = 0.1;
+    pos.x += 0.1 * model.noise.get([sc * 10.0 * time as f64, sc * 11.0 * time as f64]) as f32;
+    pos.y += 0.1 * model.noise.get([sc * 8.0 * time as f64, sc * 20.0 * time as f64]) as f32;
+    pos.z += 0.1 * model.noise.get([sc * 30.0 * time as f64, sc * 20.0 * time as f64]) as f32;
 }
 
 fn _rotate_z(point: &mut Vec3, angle: f32) {
