@@ -1,10 +1,15 @@
 use nannou::prelude::*;
 use nannou::noise::*;
+use nannou_audio as audio;
+use nannou_audio::Buffer;
+use ringbuf::{Consumer, Producer, RingBuffer};
 
 struct Model {
     locations: Vec<Vec3>,
     camera_pos: Vec3,
     noise: Perlin,
+    in_stream: audio::Stream<InputModel>,
+    out_stream: audio::Stream<OutputModel>,
 }
 
 fn main() {
@@ -19,10 +24,44 @@ fn model(app: &App) -> Model {
         .build()
         .unwrap();
 
+    // Initialise the audio host so we can spawn an audio stream.
+    let audio_host = audio::Host::new();
+
+    // Create a ring buffer and split it into producer and consumer
+    let latency_samples = 8192;
+    let ring_buffer = RingBuffer::<f32>::new(latency_samples * 2); // Add some latency
+    let (mut prod, cons) = ring_buffer.split();
+    for _ in 0..latency_samples {
+        // The ring buffer has twice as much space as necessary to add latency here,
+        // so this should never fail
+        prod.push(0.0).unwrap();
+    }
+
+    // Create input model and input stream using that model
+    let in_model = InputModel { producer: prod };
+    let in_stream = audio_host
+        .new_input_stream(in_model)
+        .capture(pass_in)
+        .build()
+        .unwrap();
+
+    // Create output model and output stream using that model
+    let out_model = OutputModel { consumer: cons };
+    let out_stream = audio_host
+        .new_output_stream(out_model)
+        .render(pass_out)
+        .build()
+        .unwrap();
+
+    in_stream.play().unwrap();
+    out_stream.play().unwrap();
+
     Model {
         locations: Vec::with_capacity(4096),
         camera_pos: Vec3::ZERO,
         noise: Perlin::new(),
+        in_stream,
+        out_stream,
     }
 }
 
@@ -53,8 +92,11 @@ fn update(app: &App, model: &mut Model, _update: Update) {
 fn step(pos: &mut Vec3, time: f32, model: &Model) {
     let sc = 0.1;
     pos.x += 0.1 * model.noise.get([sc * 10.0 * time as f64, sc * 11.0 * time as f64]) as f32;
-    pos.y += 0.1 * model.noise.get([sc * 8.0 * time as f64, sc * 20.0 * time as f64]) as f32;
-    pos.z += 0.1 * model.noise.get([sc * 30.0 * time as f64, sc * 20.0 * time as f64]) as f32;
+    // pos.y += 0.1 * model.noise.get([sc * 8.0 * time as f64, sc * 20.0 * time as f64]) as f32;
+    pos.y += 0.01;
+    pos.z += 0.1;
+
+    // pos.z += 0.1 * model.noise.get([sc * 30.0 * time as f64, sc * 20.0 * time as f64]) as f32;
 }
 
 fn _rotate_z(point: &mut Vec3, angle: f32) {
@@ -118,4 +160,32 @@ fn view(app: &App, model: &Model, frame: Frame) {
     }
 
     draw.to_frame(app, &frame).unwrap();
+}
+
+struct InputModel {
+    pub producer: Producer<f32>,
+}
+
+struct OutputModel {
+    pub consumer: Consumer<f32>,
+}
+
+fn pass_in(model: &mut InputModel, buffer: &Buffer) {
+    for frame in buffer.frames() {
+        for sample in frame {
+            model.producer.push(*sample).ok();
+        }
+    }
+}
+
+fn pass_out(model: &mut OutputModel, buffer: &mut Buffer) {
+    for frame in buffer.frames_mut() {
+        for sample in frame {
+            let recorded_sample = match model.consumer.pop() {
+                Some(f) => f,
+                None => 0.0,
+            };
+            *sample = recorded_sample;
+        }
+    }
 }

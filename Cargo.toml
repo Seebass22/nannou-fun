@@ -8,3 +8,5 @@ edition = "2021"
 [dependencies]
 nannou = "0.18.1"
 rand = "0.8.5"
+nannou_audio = "0.18.0"
+ringbuf = "0.2.2"
