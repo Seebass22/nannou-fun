@@ -9,7 +9,7 @@ struct Model {
     camera_pos: Vec3,
     noise: Perlin,
     in_stream: audio::Stream<InputModel>,
-    out_stream: audio::Stream<OutputModel>,
+    consumer: Consumer<f32>,
 }
 
 fn main() {
@@ -45,23 +45,16 @@ fn model(app: &App) -> Model {
         .build()
         .unwrap();
 
-    // Create output model and output stream using that model
-    let out_model = OutputModel { consumer: cons };
-    let out_stream = audio_host
-        .new_output_stream(out_model)
-        .render(pass_out)
-        .build()
-        .unwrap();
-
     in_stream.play().unwrap();
-    out_stream.play().unwrap();
+    // out_stream.play().unwrap();
 
     Model {
         locations: Vec::with_capacity(4096),
         camera_pos: Vec3::ZERO,
         noise: Perlin::new(),
         in_stream,
-        out_stream,
+        consumer: cons,
+        // out_stream,
     }
 }
 
@@ -72,7 +65,7 @@ impl Model {
     }
 }
 
-fn update(app: &App, model: &mut Model, _update: Update) {
+fn update(_app: &App, model: &mut Model, _update: Update) {
     if model.locations.len() == model.locations.capacity() {
         model.reset();
     }
@@ -82,21 +75,27 @@ fn update(app: &App, model: &mut Model, _update: Update) {
     } else {
         Vec3::ZERO
     };
-    step(&mut new_pos, app.time, model);
+
+    step(&mut new_pos, model);
     model.locations.push(new_pos);
 
-    let direction = new_pos - model.camera_pos;
+    let mut direction = new_pos - model.camera_pos;
+    direction.x = 0.0;
     model.camera_pos += 0.05 * direction;
 }
 
-fn step(pos: &mut Vec3, time: f32, model: &Model) {
-    let sc = 0.1;
-    pos.x += 0.1 * model.noise.get([sc * 10.0 * time as f64, sc * 11.0 * time as f64]) as f32;
-    // pos.y += 0.1 * model.noise.get([sc * 8.0 * time as f64, sc * 20.0 * time as f64]) as f32;
+fn step(pos: &mut Vec3, model: &mut Model) {
+    let mut recorded_sample = 0.0;
+    while !model.consumer.is_empty() {
+        recorded_sample = match model.consumer.pop() {
+            Some(f) => f,
+            None => 0.0,
+        };
+    }
+
+    pos.x = 20.0 * recorded_sample;
     pos.y += 0.01;
     pos.z += 0.1;
-
-    // pos.z += 0.1 * model.noise.get([sc * 30.0 * time as f64, sc * 20.0 * time as f64]) as f32;
 }
 
 fn _rotate_z(point: &mut Vec3, angle: f32) {
@@ -166,26 +165,10 @@ struct InputModel {
     pub producer: Producer<f32>,
 }
 
-struct OutputModel {
-    pub consumer: Consumer<f32>,
-}
-
 fn pass_in(model: &mut InputModel, buffer: &Buffer) {
     for frame in buffer.frames() {
         for sample in frame {
             model.producer.push(*sample).ok();
-        }
-    }
-}
-
-fn pass_out(model: &mut OutputModel, buffer: &mut Buffer) {
-    for frame in buffer.frames_mut() {
-        for sample in frame {
-            let recorded_sample = match model.consumer.pop() {
-                Some(f) => f,
-                None => 0.0,
-            };
-            *sample = recorded_sample;
         }
     }
 }
