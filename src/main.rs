@@ -1,5 +1,4 @@
 use nannou::prelude::*;
-use nannou::noise::*;
 use nannou_audio as audio;
 use nannou_audio::Buffer;
 use ringbuf::{Consumer, Producer, RingBuffer};
@@ -7,8 +6,7 @@ use ringbuf::{Consumer, Producer, RingBuffer};
 struct Model {
     locations: Vec<Vec3>,
     camera_pos: Vec3,
-    noise: Perlin,
-    in_stream: audio::Stream<InputModel>,
+    _in_stream: audio::Stream<InputModel>,
     consumer: Consumer<f32>,
 }
 
@@ -46,13 +44,11 @@ fn model(app: &App) -> Model {
         .unwrap();
 
     in_stream.play().unwrap();
-    // out_stream.play().unwrap();
 
     Model {
-        locations: Vec::with_capacity(4096),
+        locations: Vec::with_capacity(8192),
         camera_pos: Vec3::ZERO,
-        noise: Perlin::new(),
-        in_stream,
+        _in_stream: in_stream,
         consumer: cons,
         // out_stream,
     }
@@ -76,26 +72,29 @@ fn update(_app: &App, model: &mut Model, _update: Update) {
         Vec3::ZERO
     };
 
-    step(&mut new_pos, model);
-    model.locations.push(new_pos);
 
-    let mut direction = new_pos - model.camera_pos;
-    direction.x = 0.0;
-    model.camera_pos += 0.05 * direction;
-}
-
-fn step(pos: &mut Vec3, model: &mut Model) {
-    let mut recorded_sample = 0.0;
+    let mut recorded_sample;
+    let mut count = 0;
     while !model.consumer.is_empty() {
         recorded_sample = match model.consumer.pop() {
             Some(f) => f,
             None => 0.0,
         };
+        if count % 10 == 0 {
+            new_pos.x = 20.0 * recorded_sample;
+            new_pos.y += 0.01;
+            new_pos.z += 0.03;
+            model.locations.push(new_pos);
+        }
+        if model.locations.len() == model.locations.capacity() {
+            model.reset();
+        }
+        count += 1;
     }
 
-    pos.x = 20.0 * recorded_sample;
-    pos.y += 0.01;
-    pos.z += 0.1;
+    let mut direction = new_pos - model.camera_pos;
+    direction.x = 0.0;
+    model.camera_pos += direction;
 }
 
 fn _rotate_z(point: &mut Vec3, angle: f32) {
@@ -146,10 +145,7 @@ fn view(app: &App, model: &Model, frame: Frame) {
             line_color_points[i] = *point;
         }
 
-        let r = map_range(line_color_points[1].x, -10.0, 10.0, 0.1, 1.0);
-        let g = map_range(line_color_points[1].y, -10.0, 10.0, 0.1, 1.0);
-        let b = map_range(line_color_points[1].z, -10.0, 10.0, 0.1, 1.0);
-
+        let (r, g, b) = (0.7, 0.0, 0.5);
         if magnitude(&line_points) < 800.0 {
             draw.polyline()
                 .weight(2.0)
