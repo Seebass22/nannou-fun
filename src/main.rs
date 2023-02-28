@@ -19,7 +19,7 @@ fn model(app: &App) -> Model {
         .unwrap();
 
     Model {
-        locations: Vec::with_capacity(8192),
+        locations: Vec::with_capacity(2048),
         camera_pos: Vec3::ZERO,
     }
 }
@@ -52,46 +52,38 @@ fn step(pos: &mut Vec3) {
     let mut rng = thread_rng();
     let rand: u8 = rng.gen();
     let distance = 0.4;
-
-    let rotation: f32 = rng.gen();
-
     let dir = if rand % 2 == 0 { 1.0 } else { -1.0 };
-    let mut add_vec = match rand % 3 {
+    match rand % 3 {
         0 => {
-            Vec3::new(dir * distance, 0.0, 0.0)
+            pos.x += dir * distance;
         }
         1 => {
-            Vec3::new(0.0, dir * distance, 0.0)
+            pos.y += dir * distance;
         }
         2 => {
-            Vec3::new(0.0, 0.0, dir * distance)
+            pos.z += dir * distance;
         }
         _ => {
             panic!()
         }
-    };
-    rotate_z(&mut add_vec, rotation);
-    rotate_x(&mut add_vec, 1.2 * rotation);
-    rotate_y(&mut add_vec, 1.4 * rotation);
-
-    *pos += add_vec;
+    }
 }
 
-fn rotate_z(point: &mut Vec3, angle: f32) {
+fn _rotate_z(point: &mut Vec3, angle: f32) {
     let s = angle.sin();
     let c = angle.cos();
     point.x = point.x * c - point.y * s;
     point.y = point.x * s + point.y * c;
 }
 
-fn rotate_x(point: &mut Vec3, angle: f32) {
+fn _rotate_x(point: &mut Vec3, angle: f32) {
     let s = angle.sin();
     let c = angle.cos();
     point.y = point.y * c - point.z * s;
     point.z = point.y * s + point.z * c;
 }
 
-fn rotate_y(point: &mut Vec3, angle: f32) {
+fn _rotate_y(point: &mut Vec3, angle: f32) {
     let s = angle.sin();
     let c = angle.cos();
     point.x = point.x * c - point.z * s;
@@ -112,7 +104,7 @@ fn magnitude(points: &[Vec2]) -> f32 {
 
 fn view(app: &App, model: &Model, frame: Frame) {
     let draw = app.draw();
-    draw.background().color(BLACK);
+    draw.rect().w_h(4000.0, 4000.0).color(srgba(0.0, 0.0, 0.0, 0.1));
 
     for win in model.locations.windows(2) {
         let mut line_points: [Vec2; 2] = [Vec2::ZERO; 2];
