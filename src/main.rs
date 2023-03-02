@@ -46,7 +46,7 @@ fn model(app: &App) -> Model {
     in_stream.play().unwrap();
 
     Model {
-        locations: Vec::with_capacity(8192),
+        locations: Vec::with_capacity(16384),
         camera_pos: Vec3::ZERO,
         _in_stream: in_stream,
         consumer: cons,
@@ -145,10 +145,12 @@ fn view(app: &App, model: &Model, frame: Frame) {
             line_color_points[i] = *point;
         }
 
-        let (r, g, b) = (0.7, 0.0, 0.5);
+        let r = map_range((line_color_points[1].z * 0.001).sin(), -1.0, 1.0, 0.1, 1.0);
+        let b = map_range((line_color_points[1].y * 0.005).sin(), -1.0, 1.0, 0.1, 1.0);
+        let g = map_range((line_color_points[1].x * 0.5).sin(), -1.0, 1.0, 0.1, 1.0);
         if magnitude(&line_points) < 800.0 {
             draw.polyline()
-                .weight(2.0)
+                .weight(0.5)
                 .points(line_points)
                 .color(srgb(r, g, b));
         }
