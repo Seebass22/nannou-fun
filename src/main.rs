@@ -77,14 +77,14 @@ fn update(_app: &App, model: &mut Model, _update: Update) {
             const SIZE: usize = 1024;
             const PADDING: usize = SIZE / 2;
             const POWER_THRESHOLD: f32 = 5.0;
-            const CLARITY_THRESHOLD: f32 = 0.5;
+            const CLARITY_THRESHOLD: f32 = 0.7;
 
             let mut detector = McLeodDetector::new(SIZE, PADDING);
 
             if let Some(pitch) = detector.get_pitch(&buf, SAMPLE_RATE, POWER_THRESHOLD, CLARITY_THRESHOLD) {
                 let midi = freq_to_midi(pitch.frequency);
-                new_pos.x = map_range(pitch.frequency, 200.0, 2000.0, 10.0, -10.0);
-                model.current_note = midi_to_tab(midi, "Bb").to_string();
+                new_pos.x = map_range(freq_to_midi_float(pitch.frequency), 50.0, 100.0, 10.0, -10.0);
+                model.current_note = midi_to_tab(midi, "G").to_string();
             }
             new_pos.y += 0.01;
             new_pos.z += 0.03;
@@ -186,6 +186,10 @@ fn pass_in(model: &mut InputModel, buffer: &Buffer) {
 
 fn freq_to_midi(freq: f32) -> u8 {
     (12.0 * (freq / 440.0).log2() + 69.0).round() as u8
+}
+
+fn freq_to_midi_float(freq: f32) -> f32 {
+    12.0 * (freq / 440.0).log2() + 69.0
 }
 
 fn midi_to_tab(midi: u8, key: &str) -> &'static str {
