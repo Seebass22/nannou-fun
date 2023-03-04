@@ -183,9 +183,11 @@ struct InputModel {
 }
 
 fn pass_in(model: &mut InputModel, buffer: &Buffer) {
-    for frame in buffer.frames() {
-        for sample in frame {
-            model.producer.push(*sample).ok();
+    for sample in buffer.frames().map(|f| f[0]) {
+        model.producer.push(sample).ok();
+    }
+}
+
 fn freq_to_midi(freq: f32) -> u8 {
     (12.0 * (freq / 440.0).log2() + 69.0).round() as u8
 }
