@@ -10,7 +10,7 @@ struct Model {
     camera_pos: Vec3,
     _in_stream: audio::Stream<InputModel>,
     consumer: Consumer<f32>,
-    current_note: String,
+    current_note: &'static str,
 }
 
 fn main() {
@@ -53,7 +53,7 @@ fn model(app: &App) -> Model {
         camera_pos: Vec3::ZERO,
         _in_stream: in_stream,
         consumer: cons,
-        current_note: "4".to_owned(),
+        current_note: "4",
     }
 }
 
@@ -85,7 +85,7 @@ fn update(_app: &App, model: &mut Model, _update: Update) {
                 println!("pitch: {}, clarity: {}", pitch.frequency, pitch.clarity);
                 let midi = freq_to_midi(pitch.frequency);
                 new_pos.x = map_range(freq_to_midi_float(pitch.frequency), 50.0, 100.0, 10.0, -10.0);
-                model.current_note = midi_to_tab(midi, "G").to_string();
+                model.current_note = midi_to_tab(midi, "G");
             }
             new_pos.y += 0.1;
             new_pos.z += 0.3;
