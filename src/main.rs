@@ -21,7 +21,7 @@ fn model(app: &App) -> Model {
     let _window = app
         .new_window()
         .view(view)
-        .size(2560, 1440)
+        .size(1920, 1080)
         .build()
         .unwrap();
 
@@ -77,11 +77,12 @@ fn update(_app: &App, model: &mut Model, _update: Update) {
             const SIZE: usize = 1024;
             const PADDING: usize = SIZE / 2;
             const POWER_THRESHOLD: f32 = 5.0;
-            const CLARITY_THRESHOLD: f32 = 0.8;
+            const CLARITY_THRESHOLD: f32 = 0.75;
 
             let mut detector = McLeodDetector::new(SIZE, PADDING);
 
             if let Some(pitch) = detector.get_pitch(&buf, SAMPLE_RATE, POWER_THRESHOLD, CLARITY_THRESHOLD) {
+                println!("pitch: {}, clarity: {}", pitch.frequency, pitch.clarity);
                 let midi = freq_to_midi(pitch.frequency);
                 new_pos.x = map_range(freq_to_midi_float(pitch.frequency), 50.0, 100.0, 10.0, -10.0);
                 model.current_note = midi_to_tab(midi, "G").to_string();
@@ -132,11 +133,6 @@ fn to_screen_position(point: &Vec3) -> Vec2 {
     Vec2::new(10.0 * x, 10.0 * y)
 }
 
-fn magnitude(points: &[Vec2]) -> f32 {
-    let inner: f32 = (points[1].x - points[0].x).pow(2) + (points[1].y - points[0].y).pow(2);
-    inner.sqrt()
-}
-
 fn from_camera_view(point: Vec3, model: &Model) -> Vec2 {
     let point = point - model.camera_pos;
     to_screen_position(&point)
@@ -158,12 +154,10 @@ fn view(app: &App, model: &Model, frame: Frame) {
         let r = map_range(line_color_points[1].x, -8.0, 8.0, 1.0, 0.1);
         let g = 0.1;
         let b = 0.8;
-        if magnitude(&line_points) < 800.0 {
-            draw.polyline()
-                .weight(2.5)
-                .points(line_points)
-                .color(srgb(r, g, b));
-        }
+        draw.polyline()
+            .weight(2.5)
+            .points(line_points)
+            .color(srgb(r, g, b));
     }
 
     draw.text(&model.current_note).x(from_camera_view(
