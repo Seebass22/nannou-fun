@@ -70,7 +70,6 @@ fn update(_app: &App, model: &mut Model, _update: Update) {
         };
 
         buf.push(recorded_sample);
-        let mut pitch = None;
         if buf.len() == 1024 {
             const SAMPLE_RATE: usize = 44100;
             const SIZE: usize = 1024;
@@ -80,13 +79,14 @@ fn update(_app: &App, model: &mut Model, _update: Update) {
 
             let mut detector = McLeodDetector::new(SIZE, PADDING);
 
-            pitch = detector.get_pitch(&buf, SAMPLE_RATE, POWER_THRESHOLD, CLARITY_THRESHOLD);
-            buf.clear();
-        }
-
-        if let Some(pitch) = pitch {
-            dbg!(pitch.frequency);
-            new_pos.x = 0.01 * pitch.frequency as f32;
+            match detector.get_pitch(&buf, SAMPLE_RATE, POWER_THRESHOLD, CLARITY_THRESHOLD) {
+                Some(pitch) => {
+                    new_pos.x = map_range(pitch.frequency, 100.0, 1000.0, -10.0, 10.0);
+                },
+                None => {
+                    new_pos.x = 10000.0;
+                }
+            }
             new_pos.y += 0.01;
             new_pos.z += 0.03;
 
@@ -95,6 +95,8 @@ fn update(_app: &App, model: &mut Model, _update: Update) {
                 model.locations.pop();
             }
             model.locations.push(new_pos);
+
+            buf.clear();
         }
     }
 
