@@ -46,50 +46,35 @@ fn model(app: &App) -> Model {
     in_stream.play().unwrap();
 
     Model {
-        locations: Vec::with_capacity(16384),
+        locations: Vec::with_capacity(8192),
         camera_pos: Vec3::ZERO,
         _in_stream: in_stream,
         consumer: cons,
-        // out_stream,
-    }
-}
-
-impl Model {
-    fn reset(&mut self) {
-        self.locations.clear();
-        self.camera_pos = Vec3::ZERO;
     }
 }
 
 fn update(_app: &App, model: &mut Model, _update: Update) {
-    if model.locations.len() == model.locations.capacity() {
-        model.reset();
-    }
-
     let mut new_pos = if let Some(pos) = model.locations.last() {
         *pos
     } else {
         Vec3::ZERO
     };
 
-
-    let mut recorded_sample;
-    let mut count = 0;
     while !model.consumer.is_empty() {
-        recorded_sample = match model.consumer.pop() {
+        let recorded_sample = match model.consumer.pop() {
             Some(f) => f,
             None => 0.0,
         };
-        if count % 10 == 0 {
-            new_pos.x = 20.0 * recorded_sample;
-            new_pos.y += 0.01;
-            new_pos.z += 0.03;
-            model.locations.push(new_pos);
-        }
+
+        new_pos.x = 20.0 * recorded_sample;
+        new_pos.y += 0.01;
+        new_pos.z += 0.03;
+
         if model.locations.len() == model.locations.capacity() {
-            model.reset();
+            model.locations.rotate_left(1);
+            model.locations.pop();
         }
-        count += 1;
+        model.locations.push(new_pos);
     }
 
     let mut direction = new_pos - model.camera_pos;
