@@ -84,6 +84,7 @@ fn update(_app: &App, model: &mut Model, _update: Update) {
             match detector.get_pitch(&buf, SAMPLE_RATE, POWER_THRESHOLD, CLARITY_THRESHOLD) {
                 Some(pitch) => {
                     new_pos.x = map_range(pitch.frequency, 100.0, 1000.0, -10.0, 10.0);
+                    model.current_note = midi_to_tab(freq_to_midi(pitch.frequency), "Bb").to_string();
                 }
                 None => {
                     // new_pos.x = 10000.0;
@@ -185,6 +186,40 @@ fn pass_in(model: &mut InputModel, buffer: &Buffer) {
     for frame in buffer.frames() {
         for sample in frame {
             model.producer.push(*sample).ok();
+fn freq_to_midi(freq: f32) -> u8 {
+    (12.0 * (freq / 440.0).log2() + 69.0).round() as u8
+}
+
+fn midi_to_tab(midi: u8, key: &str) -> &'static str {
+    let notes_in_order = [
+        "1", "-1'", "-1", "1o", "2", "-2''", "-2'", "-2", "-3'''", "-3''", "-3'", "-3", "4", "-4'",
+        "-4", "4o", "5", "-5", "5o", "6", "-6'", "-6", "6o", "-7", "7", "-7o", "-8", "8'", "8",
+        "-9", "9'", "9", "-9o", "-10", "10''", "10'", "10",
+    ];
+    let offset = match key {
+        "C" => 0,
+        "G" => -5,
+        "D" => 2,
+        "A" => -3,
+        "E" => 4,
+        "B" => -1,
+        "F#" => 6,
+        "Db" => 1,
+        "Ab" => -4,
+        "Eb" => 3,
+        "Bb" => -2,
+        "F" => 5,
+        "LF" => -7,
+        "LC" => -12,
+        "LD" => -10,
+        "HG" => 7,
+        _ => {
+            panic!()
         }
+    };
+    let index: isize = midi as isize - 60 - offset;
+    if index < 0 || index > notes_in_order.len() as isize - 1 {
+        return "";
     }
+    notes_in_order[index as usize]
 }
