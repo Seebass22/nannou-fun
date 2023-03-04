@@ -77,7 +77,7 @@ fn update(_app: &App, model: &mut Model, _update: Update) {
             const SIZE: usize = 1024;
             const PADDING: usize = SIZE / 2;
             const POWER_THRESHOLD: f32 = 5.0;
-            const CLARITY_THRESHOLD: f32 = 0.7;
+            const CLARITY_THRESHOLD: f32 = 0.8;
 
             let mut detector = McLeodDetector::new(SIZE, PADDING);
 
@@ -86,8 +86,8 @@ fn update(_app: &App, model: &mut Model, _update: Update) {
                 new_pos.x = map_range(freq_to_midi_float(pitch.frequency), 50.0, 100.0, 10.0, -10.0);
                 model.current_note = midi_to_tab(midi, "G").to_string();
             }
-            new_pos.y += 0.01;
-            new_pos.z += 0.03;
+            new_pos.y += 0.1;
+            new_pos.z += 0.3;
 
             if model.locations.len() == model.locations.capacity() {
                 model.locations.rotate_left(1);
@@ -170,7 +170,7 @@ fn view(app: &App, model: &Model, frame: Frame) {
         *model.locations.last().unwrap_or(&Vec3::ZERO),
         model,
     )
-    .x);
+    .x).font_size(32);
     draw.to_frame(app, &frame).unwrap();
 }
 
