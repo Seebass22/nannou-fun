@@ -155,12 +155,12 @@ fn view(app: &App, model: &Model, frame: Frame) {
             line_color_points[i] = *point;
         }
 
-        let r = map_range((line_color_points[1].z * 0.001).sin(), -1.0, 1.0, 0.1, 1.0);
-        let b = map_range((line_color_points[1].y * 0.005).sin(), -1.0, 1.0, 0.1, 1.0);
-        let g = map_range((line_color_points[1].x * 0.5).sin(), -1.0, 1.0, 0.1, 1.0);
+        let r = map_range(line_color_points[1].x, -8.0, 8.0, 1.0, 0.1);
+        let g = 0.1;
+        let b = 0.8;
         if magnitude(&line_points) < 800.0 {
             draw.polyline()
-                .weight(0.5)
+                .weight(2.5)
                 .points(line_points)
                 .color(srgb(r, g, b));
         }
