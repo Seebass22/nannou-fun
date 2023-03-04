@@ -81,14 +81,10 @@ fn update(_app: &App, model: &mut Model, _update: Update) {
 
             let mut detector = McLeodDetector::new(SIZE, PADDING);
 
-            match detector.get_pitch(&buf, SAMPLE_RATE, POWER_THRESHOLD, CLARITY_THRESHOLD) {
-                Some(pitch) => {
-                    new_pos.x = map_range(pitch.frequency, 100.0, 1000.0, -10.0, 10.0);
-                    model.current_note = midi_to_tab(freq_to_midi(pitch.frequency), "Bb").to_string();
-                }
-                None => {
-                    // new_pos.x = 10000.0;
-                }
+            if let Some(pitch) = detector.get_pitch(&buf, SAMPLE_RATE, POWER_THRESHOLD, CLARITY_THRESHOLD) {
+                let midi = freq_to_midi(pitch.frequency);
+                new_pos.x = map_range(pitch.frequency, 200.0, 2000.0, 10.0, -10.0);
+                model.current_note = midi_to_tab(midi, "Bb").to_string();
             }
             new_pos.y += 0.01;
             new_pos.z += 0.03;
