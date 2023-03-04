@@ -1,15 +1,16 @@
 use nannou::prelude::*;
 use nannou_audio as audio;
 use nannou_audio::Buffer;
-use ringbuf::{Consumer, Producer, RingBuffer};
 use pitch_detection::detector::mcleod::McLeodDetector;
 use pitch_detection::detector::PitchDetector;
+use ringbuf::{Consumer, Producer, RingBuffer};
 
 struct Model {
     locations: Vec<Vec3>,
     camera_pos: Vec3,
     _in_stream: audio::Stream<InputModel>,
     consumer: Consumer<f32>,
+    current_note: String,
 }
 
 fn main() {
@@ -52,6 +53,7 @@ fn model(app: &App) -> Model {
         camera_pos: Vec3::ZERO,
         _in_stream: in_stream,
         consumer: cons,
+        current_note: "4".to_owned(),
     }
 }
 
@@ -82,9 +84,9 @@ fn update(_app: &App, model: &mut Model, _update: Update) {
             match detector.get_pitch(&buf, SAMPLE_RATE, POWER_THRESHOLD, CLARITY_THRESHOLD) {
                 Some(pitch) => {
                     new_pos.x = map_range(pitch.frequency, 100.0, 1000.0, -10.0, 10.0);
-                },
+                }
                 None => {
-                    new_pos.x = 10000.0;
+                    // new_pos.x = 10000.0;
                 }
             }
             new_pos.y += 0.01;
@@ -138,6 +140,11 @@ fn magnitude(points: &[Vec2]) -> f32 {
     inner.sqrt()
 }
 
+fn from_camera_view(point: Vec3, model: &Model) -> Vec2 {
+    let point = point - model.camera_pos;
+    to_screen_position(&point)
+}
+
 fn view(app: &App, model: &Model, frame: Frame) {
     let draw = app.draw();
     draw.background().color(BLACK);
@@ -147,9 +154,7 @@ fn view(app: &App, model: &Model, frame: Frame) {
         let mut line_color_points: [Vec3; 2] = [Vec3::ZERO; 2];
 
         for (i, point) in win.iter().enumerate() {
-            let mut modified_point = *point;
-            modified_point -= model.camera_pos;
-            line_points[i] = to_screen_position(&modified_point);
+            line_points[i] = from_camera_view(*point, model);
             line_color_points[i] = *point;
         }
 
@@ -164,6 +169,11 @@ fn view(app: &App, model: &Model, frame: Frame) {
         }
     }
 
+    draw.text(&model.current_note).x(from_camera_view(
+        *model.locations.last().unwrap_or(&Vec3::ZERO),
+        model,
+    )
+    .x);
     draw.to_frame(app, &frame).unwrap();
 }
 
