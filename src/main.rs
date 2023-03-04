@@ -2,6 +2,8 @@ use nannou::prelude::*;
 use nannou_audio as audio;
 use nannou_audio::Buffer;
 use ringbuf::{Consumer, Producer, RingBuffer};
+use pitch_detection::detector::mcleod::McLeodDetector;
+use pitch_detection::detector::PitchDetector;
 
 struct Model {
     locations: Vec<Vec3>,
@@ -60,21 +62,40 @@ fn update(_app: &App, model: &mut Model, _update: Update) {
         Vec3::ZERO
     };
 
+    let mut buf = Vec::with_capacity(1024);
     while !model.consumer.is_empty() {
         let recorded_sample = match model.consumer.pop() {
             Some(f) => f,
             None => 0.0,
         };
 
-        new_pos.x = 20.0 * recorded_sample;
-        new_pos.y += 0.01;
-        new_pos.z += 0.03;
+        buf.push(recorded_sample);
+        let mut pitch = None;
+        if buf.len() == 1024 {
+            const SAMPLE_RATE: usize = 44100;
+            const SIZE: usize = 1024;
+            const PADDING: usize = SIZE / 2;
+            const POWER_THRESHOLD: f32 = 5.0;
+            const CLARITY_THRESHOLD: f32 = 0.5;
 
-        if model.locations.len() == model.locations.capacity() {
-            model.locations.rotate_left(1);
-            model.locations.pop();
+            let mut detector = McLeodDetector::new(SIZE, PADDING);
+
+            pitch = detector.get_pitch(&buf, SAMPLE_RATE, POWER_THRESHOLD, CLARITY_THRESHOLD);
+            buf.clear();
         }
-        model.locations.push(new_pos);
+
+        if let Some(pitch) = pitch {
+            dbg!(pitch.frequency);
+            new_pos.x = 0.01 * pitch.frequency as f32;
+            new_pos.y += 0.01;
+            new_pos.z += 0.03;
+
+            if model.locations.len() == model.locations.capacity() {
+                model.locations.rotate_left(1);
+                model.locations.pop();
+            }
+            model.locations.push(new_pos);
+        }
     }
 
     let mut direction = new_pos - model.camera_pos;
