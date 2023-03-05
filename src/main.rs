@@ -49,7 +49,7 @@ fn model(app: &App) -> Model {
     in_stream.play().unwrap();
 
     Model {
-        locations: Vec::with_capacity(8192),
+        locations: Vec::with_capacity(4096),
         camera_pos: Vec3::ZERO,
         _in_stream: in_stream,
         consumer: cons,
