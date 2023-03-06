@@ -76,16 +76,22 @@ fn update(_app: &App, model: &mut Model, _update: Update) {
             const SAMPLE_RATE: usize = 44100;
             const SIZE: usize = 1024;
             const PADDING: usize = SIZE / 2;
-            const POWER_THRESHOLD: f32 = 5.0;
+            const POWER_THRESHOLD: f32 = 3.0;
             const CLARITY_THRESHOLD: f32 = 0.75;
 
             let mut detector = McLeodDetector::new(SIZE, PADDING);
 
             if let Some(pitch) = detector.get_pitch(&buf, SAMPLE_RATE, POWER_THRESHOLD, CLARITY_THRESHOLD) {
                 println!("pitch: {}, clarity: {}", pitch.frequency, pitch.clarity);
-                let midi = freq_to_midi(pitch.frequency);
-                new_pos.x = map_range(freq_to_midi_float(pitch.frequency), 50.0, 100.0, 10.0, -10.0);
-                model.current_note = midi_to_tab(midi, "G");
+                let frequency = pitch.frequency;
+                let frequency = if pitch.frequency > 1000.0 {
+                    pitch.frequency * 0.5
+                } else {
+                    pitch.frequency
+                };
+                let midi = freq_to_midi(frequency);
+                new_pos.x = map_range(freq_to_midi_float(frequency), 50.0, 100.0, 10.0, -10.0);
+                model.current_note = midi_to_tab(midi, "C");
             }
             new_pos.y += 0.1;
             new_pos.z += 0.3;
@@ -140,7 +146,10 @@ fn from_camera_view(point: Vec3, model: &Model) -> Vec2 {
 
 fn view(app: &App, model: &Model, frame: Frame) {
     let draw = app.draw();
-    draw.background().color(BLACK);
+    // draw.background().color(BLACK);
+    if app.elapsed_frames() == 1 {
+        draw.background().color(BLACK);
+    }
 
     for win in model.locations.windows(2) {
         let mut line_points: [Vec2; 2] = [Vec2::ZERO; 2];
@@ -160,11 +169,12 @@ fn view(app: &App, model: &Model, frame: Frame) {
             .color(srgb(r, g, b));
     }
 
-    draw.text(&model.current_note).x(from_camera_view(
-        *model.locations.last().unwrap_or(&Vec3::ZERO),
-        model,
-    )
-    .x).font_size(32);
+    let text_pos = from_camera_view(*model.locations.last().unwrap_or(&Vec3::ZERO), model);
+    draw.rect()
+        .w_h(2000.0, 2000.0)
+        // .y(text_pos.y)
+        .color(srgba(0.0, 0.0, 0.0, 0.15));
+    draw.text(&model.current_note).x(text_pos.x).font_size(32);
     draw.to_frame(app, &frame).unwrap();
 }
 
@@ -187,6 +197,14 @@ fn freq_to_midi_float(freq: f32) -> f32 {
 }
 
 fn midi_to_tab(midi: u8, key: &str) -> &'static str {
+    // country harp
+    // let notes_in_order = [
+    //     "1", "-1'", "-1", "1o", "2", "-2''", "-2'", "-2", "-3'''", "-3''", "-3'", "-3", "4", "-4'",
+    //     "-4", "4o", "5", "-5'", "-5", "6", "-6'", "-6", "6o", "-7", "7", "-7o", "-8", "8'", "8",
+    //     "-9", "9'", "9", "-9o", "-10", "10''", "10'", "10",
+    // ];
+
+    // richter harp
     let notes_in_order = [
         "1", "-1'", "-1", "1o", "2", "-2''", "-2'", "-2", "-3'''", "-3''", "-3'", "-3", "4", "-4'",
         "-4", "4o", "5", "-5", "5o", "6", "-6'", "-6", "6o", "-7", "7", "-7o", "-8", "8'", "8",
