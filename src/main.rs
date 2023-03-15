@@ -20,7 +20,7 @@ fn model(app: &App) -> Model {
         .unwrap();
 
     Model {
-        locations: Vec::with_capacity(4096),
+        locations: Vec::with_capacity(8192),
         camera_pos: Vec3::ZERO,
         noise: Perlin::new(),
     }
@@ -51,10 +51,10 @@ fn update(app: &App, model: &mut Model, _update: Update) {
 }
 
 fn step(pos: &mut Vec3, time: f32, model: &Model) {
-    let sc = 0.1;
+    let sc = 0.05;
     pos.x += 0.1 * model.noise.get([sc * 10.0 * time as f64, sc * 11.0 * time as f64]) as f32;
     pos.y += 0.1 * model.noise.get([sc * 8.0 * time as f64, sc * 20.0 * time as f64]) as f32;
-    pos.z += 0.1 * model.noise.get([sc * 30.0 * time as f64, sc * 20.0 * time as f64]) as f32;
+    pos.z += 0.1 * model.noise.get([sc * 11.0 * time as f64, sc * 20.0 * time as f64]) as f32;
 }
 
 fn _rotate_z(point: &mut Vec3, angle: f32) {
@@ -101,6 +101,7 @@ fn view(app: &App, model: &Model, frame: Frame) {
         for (i, point) in win.iter().enumerate() {
             let mut modified_point = *point;
             modified_point -= model.camera_pos;
+            _rotate_y(&mut modified_point, app.time);
             line_points[i] = to_screen_position(&modified_point);
             line_color_points[i] = *point;
         }
@@ -111,7 +112,7 @@ fn view(app: &App, model: &Model, frame: Frame) {
 
         if magnitude(&line_points) < 800.0 {
             draw.polyline()
-                .weight(2.0)
+                .weight(5.0)
                 .points(line_points)
                 .color(srgb(r, g, b));
         }
