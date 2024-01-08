@@ -1,10 +1,11 @@
-use nannou::prelude::*;
-use nannou::noise::*;
+use nannou::{prelude::*, ease::{self, map_clamp}};
 
 struct Model {
-    locations: Vec<Vec3>,
-    camera_pos: Vec3,
-    noise: Perlin,
+    locations: Vec<Vec2>,
+    left_click_time: f32,
+    right_click_time: f32,
+    y: f32,
+    x: f32,
 }
 
 fn main() {
@@ -16,107 +17,50 @@ fn model(app: &App) -> Model {
         .new_window()
         .view(view)
         .size(2560, 1440)
+        .mouse_pressed(mouse_pressed)
         .build()
         .unwrap();
 
-    Model {
-        locations: Vec::with_capacity(8192),
-        camera_pos: Vec3::ZERO,
-        noise: Perlin::new(),
+    let mut locations = Vec::new();
+    for x in -1000..=1000 {
+        locations.push(Vec2::new(x as f32, 0.0));
     }
-}
 
-impl Model {
-    fn reset(&mut self) {
-        self.locations.clear();
-        self.camera_pos = Vec3::ZERO;
+    Model {
+        left_click_time: -10.0,
+        right_click_time: -10.0,
+        y: 1.0,
+        x: 1.0,
+        locations,
     }
 }
 
 fn update(app: &App, model: &mut Model, _update: Update) {
-    if model.locations.len() == model.locations.capacity() {
-        model.reset();
+    let time_since_left_click = app.time - model.left_click_time;
+    let left_fac = model.y * map_clamp(time_since_left_click, 0.0, 0.3, 0.0, 1.0, ease::bounce::ease_out);
+    for point in model.locations.iter_mut() {
+        let time_scale = 20.0 * model.x;
+        let x_scale = 0.02;
+        let y_scale = 150.0 * left_fac;
+        point.y = y_scale * (x_scale * point.x + time_scale * app.time).sin();
     }
-
-    let mut new_pos = if let Some(pos) = model.locations.last() {
-        *pos
-    } else {
-        Vec3::ZERO
-    };
-    step(&mut new_pos, app.time, model);
-    model.locations.push(new_pos);
-
-    let direction = new_pos - model.camera_pos;
-    model.camera_pos += 0.05 * direction;
-}
-
-fn step(pos: &mut Vec3, time: f32, model: &Model) {
-    let sc = 0.05;
-    pos.x += 0.1 * model.noise.get([sc * 10.0 * time as f64, sc * 11.0 * time as f64]) as f32;
-    pos.y += 0.1 * model.noise.get([sc * 8.0 * time as f64, sc * 20.0 * time as f64]) as f32;
-    pos.z += 0.1 * model.noise.get([sc * 11.0 * time as f64, sc * 20.0 * time as f64]) as f32;
-}
-
-fn _rotate_z(point: &mut Vec3, angle: f32) {
-    let s = angle.sin();
-    let c = angle.cos();
-    point.x = point.x * c - point.y * s;
-    point.y = point.x * s + point.y * c;
-}
-
-fn _rotate_x(point: &mut Vec3, angle: f32) {
-    let s = angle.sin();
-    let c = angle.cos();
-    point.y = point.y * c - point.z * s;
-    point.z = point.y * s + point.z * c;
-}
-
-fn _rotate_y(point: &mut Vec3, angle: f32) {
-    let s = angle.sin();
-    let c = angle.cos();
-    point.x = point.x * c - point.z * s;
-    point.z = point.x * s + point.z * c;
-}
-
-fn to_screen_position(point: &Vec3) -> Vec2 {
-    let z = point.z - 10.0;
-    let x = point.x / (0.01 * z);
-    let y = point.y / (0.01 * z);
-    Vec2::new(10.0 * x, 10.0 * y)
-}
-
-fn magnitude(points: &[Vec2]) -> f32 {
-    let inner: f32 = (points[1].x - points[0].x).pow(2) + (points[1].y - points[0].y).pow(2);
-    inner.sqrt()
 }
 
 fn view(app: &App, model: &Model, frame: Frame) {
     let draw = app.draw();
     draw.background().color(BLACK);
-
-    for win in model.locations.windows(2) {
-        let mut line_points: [Vec2; 2] = [Vec2::ZERO; 2];
-        let mut line_color_points: [Vec3; 2] = [Vec3::ZERO; 2];
-
-        for (i, point) in win.iter().enumerate() {
-            let mut modified_point = *point;
-            modified_point -= model.camera_pos;
-            _rotate_y(&mut modified_point, app.time);
-            line_points[i] = to_screen_position(&modified_point);
-            line_color_points[i] = *point;
-        }
-
-        let r = map_range(line_color_points[1].x, -10.0, 10.0, 0.1, 1.0);
-        let g = map_range(line_color_points[1].y, -10.0, 10.0, 0.1, 1.0);
-        let b = map_range(line_color_points[1].z, -10.0, 10.0, 0.1, 1.0);
-
-        if magnitude(&line_points) < 800.0 {
-            draw.polyline()
-                .weight(5.0)
-                .points(line_points)
-                .color(srgb(r, g, b));
-        }
-    }
-
+    draw.polyline()
+        .points(model.locations.clone())
+        .color(WHITE);
     draw.to_frame(app, &frame).unwrap();
+}
+
+fn mouse_pressed(app: &App, model: &mut Model, button: MouseButton) {
+    if button == MouseButton::Left {
+        model.left_click_time = app.time;
+        model.y = map_range(app.mouse.y, -720.0, 720.0, 0.1, 5.0);
+        model.x = map_range(app.mouse.x, -1280.0, 1280.0, 0.1, 5.0);
+    } else {
+        model.right_click_time = app.time;
+    }
 }
