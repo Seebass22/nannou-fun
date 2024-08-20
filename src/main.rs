@@ -1,11 +1,10 @@
-use nannou::{prelude::*, ease::{self, map_clamp}};
+use nannou::{
+    ease::{self, map_clamp},
+    prelude::*,
+};
 
 struct Model {
-    locations: Vec<Vec2>,
-    left_click_time: f32,
-    right_click_time: f32,
-    y: f32,
-    x: f32,
+    add: f32,
 }
 
 fn main() {
@@ -17,50 +16,34 @@ fn model(app: &App) -> Model {
         .new_window()
         .view(view)
         .size(2560, 1440)
-        .mouse_pressed(mouse_pressed)
         .build()
         .unwrap();
 
-    let mut locations = Vec::new();
-    for x in -1000..=1000 {
-        locations.push(Vec2::new(x as f32, 0.0));
-    }
-
-    Model {
-        left_click_time: -10.0,
-        right_click_time: -10.0,
-        y: 1.0,
-        x: 1.0,
-        locations,
-    }
+    Model { add: 0.0 }
 }
 
-fn update(app: &App, model: &mut Model, _update: Update) {
-    let time_since_left_click = app.time - model.left_click_time;
-    let left_fac = model.y * map_clamp(time_since_left_click, 0.0, 0.3, 0.0, 1.0, ease::bounce::ease_out);
-    for point in model.locations.iter_mut() {
-        let time_scale = 20.0 * model.x;
-        let x_scale = 0.02;
-        let y_scale = 150.0 * left_fac;
-        point.y = y_scale * (x_scale * point.x + time_scale * app.time).sin();
-    }
-}
+fn update(app: &App, model: &mut Model, _update: Update) {}
 
 fn view(app: &App, model: &Model, frame: Frame) {
     let draw = app.draw();
     draw.background().color(BLACK);
-    draw.polyline()
-        .points(model.locations.clone())
-        .color(WHITE);
-    draw.to_frame(app, &frame).unwrap();
-}
 
-fn mouse_pressed(app: &App, model: &mut Model, button: MouseButton) {
-    if button == MouseButton::Left {
-        model.left_click_time = app.time;
-        model.y = map_range(app.mouse.y, -720.0, 720.0, 0.1, 5.0);
-        model.x = map_range(app.mouse.x, -1280.0, 1280.0, 0.1, 5.0);
-    } else {
-        model.right_click_time = app.time;
+    let mut i = app.time * 128.0;
+    let width = 160.0;
+
+    for y in 0..9 {
+        for x in 0..16 {
+            let x = x as f32 * width - 1280.0 + 0.5 * width;
+            let y = y as f32 * width - 720.0 + 0.5 * width;
+            let index = fmod(i, 144.0);
+
+            draw.rect().x_y(x, y).w_h(width, width).color(LinSrgb::new(
+                model.add + index / 144.0,
+                model.add + index / 144.0,
+                model.add + index / 144.0,
+            ));
+            i += 1.0;
+        }
     }
+    draw.to_frame(app, &frame).unwrap();
 }
