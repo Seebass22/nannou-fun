@@ -23,7 +23,7 @@ fn model(app: &App) -> Model {
 }
 
 fn update(app: &App, model: &mut Model, _update: Update) {
-    if app.elapsed_frames() % 10 == 0 {
+    if app.elapsed_frames() % 72 == 0 {
         let mut rng = thread_rng();
         let mut indices = [0u8; 16];
         for i in indices.iter_mut() {
@@ -38,7 +38,7 @@ fn view(app: &App, model: &Model, frame: Frame) {
     draw.background().color(BLACK);
 
     let mut i = 0.0;
-    let index_add = app.time * 128.0;
+    let index_add = app.time * 144.0;
 
     let width = 160.0;
 
@@ -53,9 +53,9 @@ fn view(app: &App, model: &Model, frame: Frame) {
                 add = 1.0;
             }
             draw.rect().x_y(x, y).w_h(width, width).color(LinSrgb::new(
-                add + index / 144.0,
-                0.5 * add + index / 144.0,
-                0.1 * add + index / 144.0,
+                -0.2 + 0.5 * add + index / 144.0,
+                -0.5 * add + index / 144.0,
+                -0.4 + 0.1 * add + index / 144.0,
             ));
             i += 1.0;
         }
